@@ -200,7 +200,7 @@ public class AuthenticationCommandHandlerTest {
   public void correctDeterminationOfPasswordExpiration()
   {
     final LocalDateTime passwordExpirationFromToday = LocalDateTime.now(ZoneId.of("UTC"));
-    Assert.assertTrue(AuthenticationCommandHandler.pastExpiration(Optional.of(passwordExpirationFromToday)));
+    Assert.assertFalse(AuthenticationCommandHandler.pastExpiration(Optional.of(passwordExpirationFromToday)));
 
     final LocalDateTime passwordExpirationFromYesterday = passwordExpirationFromToday.minusDays(1);
     Assert.assertTrue(AuthenticationCommandHandler.pastExpiration(Optional.of(passwordExpirationFromYesterday)));
@@ -220,7 +220,7 @@ public class AuthenticationCommandHandlerTest {
     Assert.assertFalse(AuthenticationCommandHandler.pastGracePeriod(Optional.of(nowJustWithinPasswordExpirationAndGracePeriod), GRACE_PERIOD));
 
     final LocalDateTime nowJustOutsideOfPasswordExpirationAndGracePeriod = passwordExpirationFromToday.minusDays(GRACE_PERIOD);
-    Assert.assertTrue(AuthenticationCommandHandler.pastGracePeriod(Optional.of(nowJustOutsideOfPasswordExpirationAndGracePeriod), GRACE_PERIOD));
+    Assert.assertFalse(AuthenticationCommandHandler.pastGracePeriod(Optional.of(nowJustOutsideOfPasswordExpirationAndGracePeriod), GRACE_PERIOD));
   }
 
   @Test
