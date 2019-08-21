@@ -1,0 +1,13 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: fineract-cn-identity-public
+spec:
+  selector:
+    app: fineract-cn-identity
+  ports:
+    - name: http
+      protocol: TCP
+      port: 2021
+      targetPort: httpport
+  type: LoadBalancer
