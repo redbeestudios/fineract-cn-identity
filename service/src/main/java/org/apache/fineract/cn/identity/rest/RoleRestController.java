@@ -84,6 +84,7 @@ public class RoleRestController
       produces = {MediaType.APPLICATION_JSON_VALUE})
   @Permittable(value = AcceptedTokenType.TENANT, groupId = PermittableGroupIds.ROLE_MANAGEMENT)
   public @ResponseBody List<Role> findAll() {
+
     return service.findAll();
   }
 

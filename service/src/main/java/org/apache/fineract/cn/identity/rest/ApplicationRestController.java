@@ -132,7 +132,7 @@ public class ApplicationRestController {
           consumes = {MediaType.ALL_VALUE},
           produces = {MediaType.APPLICATION_JSON_VALUE})
   @Permittable(value = AcceptedTokenType.SYSTEM)
-  @Permittable(value = AcceptedTokenType.TENANT, permittedEndpoint = "applications/{applicationidentifier}/permissions", groupId = PermittableGroupIds.APPLICATION_SELF_MANAGEMENT)
+  @Permittable(value = AcceptedTokenType.TENANT, permittedEndpoint = "applications/*/permissions", groupId = PermittableGroupIds.APPLICATION_SELF_MANAGEMENT)
   public @ResponseBody
   ResponseEntity<List<Permission>>
   getApplicationPermissions(@PathVariable("applicationidentifier") @Nonnull String applicationIdentifier) {

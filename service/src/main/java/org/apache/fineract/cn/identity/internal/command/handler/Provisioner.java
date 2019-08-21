@@ -164,8 +164,8 @@ public class Provisioner {
 
       createPermittablesGroup(PermittableGroupIds.ROLE_MANAGEMENT, "/roles/*", "/permittablegroups/*");
       createPermittablesGroup(PermittableGroupIds.IDENTITY_MANAGEMENT, "/users/*");
-      createPermittablesGroup(PermittableGroupIds.SELF_MANAGEMENT, "/users/{useridentifier}/password", "/applications/*/permissions/*/users/{useridentifier}/enabled");
-      createPermittablesGroup(PermittableGroupIds.APPLICATION_SELF_MANAGEMENT, "/applications/{applicationidentifier}/permissions");
+      createPermittablesGroup(PermittableGroupIds.SELF_MANAGEMENT, "/users/{useridentifier}/password", "/applications/*/permissions/*/users/*/enabled");
+      createPermittablesGroup(PermittableGroupIds.APPLICATION_SELF_MANAGEMENT, "/applications/*/permissions");
 
       final List<PermissionType> permissions = new ArrayList<>();
       permissions.add(fullAccess(PermittableGroupIds.ROLE_MANAGEMENT));
