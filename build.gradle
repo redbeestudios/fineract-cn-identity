@@ -17,6 +17,11 @@
 
 group 'org.apache.fineract.cn'
 
+task buildDocker {
+  //dependsOn gradle.includedBuild('service').task(':publishToMavenLocal')
+  dependsOn gradle.includedBuild('service').task(':buildDocker')
+}
+
 task publishApiToMavenLocal {
     dependsOn gradle.includedBuild('api').task(':publishToMavenLocal')
 }
