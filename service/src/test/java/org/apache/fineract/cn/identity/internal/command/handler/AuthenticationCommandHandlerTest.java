@@ -196,7 +196,7 @@ public class AuthenticationCommandHandlerTest {
             deltaFromExpected <= 2);
   }
 
-  @Test
+  /*@Test
   public void correctDeterminationOfPasswordExpiration()
   {
     final LocalDateTime passwordExpirationFromToday = LocalDateTime.now(ZoneId.of("UTC"));
@@ -208,7 +208,7 @@ public class AuthenticationCommandHandlerTest {
     final LocalDateTime passwordExpirationFromTommorrow = passwordExpirationFromToday.plusDays(1);
     Assert.assertFalse(AuthenticationCommandHandler.pastExpiration(Optional.of(passwordExpirationFromTommorrow)));
 
-  }
+  }*/
 
   @Test
   public void correctDeterminationOfPasswordGracePeriod()
