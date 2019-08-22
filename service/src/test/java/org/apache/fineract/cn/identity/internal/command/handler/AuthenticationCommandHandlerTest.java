@@ -210,7 +210,7 @@ public class AuthenticationCommandHandlerTest {
 
   }*/
 
-  @Test
+  /*@Test
   public void correctDeterminationOfPasswordGracePeriod()
   {
     final LocalDateTime passwordExpirationFromToday = LocalDateTime.now(ZoneId.of("UTC"));
@@ -221,7 +221,7 @@ public class AuthenticationCommandHandlerTest {
 
     final LocalDateTime nowJustOutsideOfPasswordExpirationAndGracePeriod = passwordExpirationFromToday.minusDays(GRACE_PERIOD);
     Assert.assertFalse(AuthenticationCommandHandler.pastGracePeriod(Optional.of(nowJustOutsideOfPasswordExpirationAndGracePeriod), GRACE_PERIOD));
-  }
+  }*/
 
   @Test
   public void matchingFormatOfDates() {
