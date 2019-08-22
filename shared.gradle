@@ -45,7 +45,26 @@ tasks.withType(JavaCompile) {
 repositories {
     jcenter()
     mavenLocal()
-    maven { url 'https://mifos.jfrog.io/mifos/libs-snapshot/' }
+    repositories {
+        maven {
+            url "http://registry-nd.dev.redbee.io/repository/waas-snapshot"
+
+            credentials {
+                username = String.valueOf(System.getenv("NEXUS_USER"))
+                password = String.valueOf(System.getenv("NEXUS_PASS"))
+            }
+
+        }
+        maven {
+            url "http://registry-nd.dev.redbee.io/repository/waas"
+
+            credentials {
+                username = String.valueOf(System.getenv("NEXUS_USER"))
+                password = String.valueOf(System.getenv("NEXUS_PASS"))
+            }
+
+        }
+    }
 }
 
 configurations {
