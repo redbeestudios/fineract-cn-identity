@@ -52,7 +52,10 @@ public class UserCommandHandler {
   }
 
   @CommandHandler(logStart = CommandLogLevel.INFO, logFinish = CommandLogLevel.INFO)
-  @EventEmitter(selectorName = EventConstants.OPERATION_HEADER, selectorValue = EventConstants.OPERATION_PUT_USER_ROLEIDENTIFIER)
+  @EventEmitter(selectorName = EventConstants.OPERATION_HEADER, selectorValue = EventConstants.OPERATION_PUT_USER_ROLEIDENTIFIER,
+          selectorKafkaEvent = NotificationFlag.NOTIFY,
+          selectorKafkaTopic = "topic_identity_user",
+          selectorKafkaTopicError = "topic_error_identity_user")
   public String process(final ChangeUserRoleCommand command) {
     final UserEntity user = usersRepository.get(command.getIdentifier())
         .orElseThrow(() -> ServiceException.notFound(
@@ -65,7 +68,10 @@ public class UserCommandHandler {
   }
 
   @CommandHandler(logStart = CommandLogLevel.INFO, logFinish = CommandLogLevel.INFO)
-  @EventEmitter(selectorName = EventConstants.OPERATION_HEADER, selectorValue = EventConstants.OPERATION_PUT_USER_PASSWORD)
+  @EventEmitter(selectorName = EventConstants.OPERATION_HEADER, selectorValue = EventConstants.OPERATION_PUT_USER_PASSWORD,
+          selectorKafkaEvent = NotificationFlag.NOTIFY,
+          selectorKafkaTopic = "topic_identity_user",
+          selectorKafkaTopicError = "topic_error_identity_user")
   public String process(final ChangeUserPasswordCommand command) {
     final UserEntity user = usersRepository.get(command.getIdentifier())
         .orElseThrow(() -> ServiceException.notFound(
@@ -80,7 +86,11 @@ public class UserCommandHandler {
   }
 
   @CommandHandler(logStart = CommandLogLevel.INFO, logFinish = CommandLogLevel.INFO)
-  @EventEmitter(selectorName = EventConstants.OPERATION_HEADER, selectorValue = EventConstants.OPERATION_POST_USER, selectorKafaEvent = NotificationFlag.NOTIFY)
+  @EventEmitter(selectorName = EventConstants.OPERATION_HEADER, selectorValue = EventConstants.OPERATION_POST_USER,
+          selectorKafkaEvent = NotificationFlag.NOTIFY,
+          selectorKafkaTopic = "topic_identity_user",
+          selectorKafkaTopicError = "topic_error_identity_user")
+  // TODO parametrizar essto con cloud config
   public String process(final CreateUserCommand command) {
     Assert.hasText(command.getPassword());
 
