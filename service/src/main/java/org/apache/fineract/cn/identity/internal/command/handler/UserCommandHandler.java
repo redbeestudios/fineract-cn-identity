@@ -19,6 +19,7 @@
 package org.apache.fineract.cn.identity.internal.command.handler;
 
 import org.apache.fineract.cn.command.annotation.*;
+import org.apache.fineract.cn.command.kafka.KafkaTopicConstants;
 import org.apache.fineract.cn.identity.api.v1.events.EventConstants;
 import org.apache.fineract.cn.identity.internal.command.ChangeUserPasswordCommand;
 import org.apache.fineract.cn.identity.internal.command.ChangeUserRoleCommand;
@@ -52,10 +53,7 @@ public class UserCommandHandler {
   }
 
   @CommandHandler(logStart = CommandLogLevel.INFO, logFinish = CommandLogLevel.INFO)
-  @EventEmitter(selectorName = EventConstants.OPERATION_HEADER, selectorValue = EventConstants.OPERATION_PUT_USER_ROLEIDENTIFIER,
-          selectorKafkaEvent = NotificationFlag.NOTIFY,
-          selectorKafkaTopic = "topic_identity_user",
-          selectorKafkaTopicError = "topic_error_identity_user")
+  @EventEmitter(selectorName = EventConstants.OPERATION_HEADER, selectorValue = EventConstants.OPERATION_PUT_USER_ROLEIDENTIFIER)
   public String process(final ChangeUserRoleCommand command) {
     final UserEntity user = usersRepository.get(command.getIdentifier())
         .orElseThrow(() -> ServiceException.notFound(
@@ -68,10 +66,7 @@ public class UserCommandHandler {
   }
 
   @CommandHandler(logStart = CommandLogLevel.INFO, logFinish = CommandLogLevel.INFO)
-  @EventEmitter(selectorName = EventConstants.OPERATION_HEADER, selectorValue = EventConstants.OPERATION_PUT_USER_PASSWORD,
-          selectorKafkaEvent = NotificationFlag.NOTIFY,
-          selectorKafkaTopic = "topic_identity_user",
-          selectorKafkaTopicError = "topic_error_identity_user")
+  @EventEmitter(selectorName = EventConstants.OPERATION_HEADER, selectorValue = EventConstants.OPERATION_PUT_USER_PASSWORD)
   public String process(final ChangeUserPasswordCommand command) {
     final UserEntity user = usersRepository.get(command.getIdentifier())
         .orElseThrow(() -> ServiceException.notFound(
@@ -86,11 +81,11 @@ public class UserCommandHandler {
   }
 
   @CommandHandler(logStart = CommandLogLevel.INFO, logFinish = CommandLogLevel.INFO)
-  @EventEmitter(selectorName = EventConstants.OPERATION_HEADER, selectorValue = EventConstants.OPERATION_POST_USER,
+  @EventEmitter(selectorName = EventConstants.OPERATION_HEADER,
+          selectorValue = EventConstants.OPERATION_POST_USER,
           selectorKafkaEvent = NotificationFlag.NOTIFY,
-          selectorKafkaTopic = "topic_identity_user",
-          selectorKafkaTopicError = "topic_error_identity_user")
-  // TODO parametrizar essto con cloud config
+          selectorKafkaTopic = KafkaTopicConstants.TOPIC_IDENTITY_USER,
+          selectorKafkaTopicError = KafkaTopicConstants.TOPIC_ERROR_IDENTITY_USER)
   public String process(final CreateUserCommand command) {
     Assert.hasText(command.getPassword());
 
