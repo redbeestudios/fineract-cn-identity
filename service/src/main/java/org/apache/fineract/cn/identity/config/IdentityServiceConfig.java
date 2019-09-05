@@ -55,7 +55,8 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter
     "org.apache.fineract.cn.identity.rest",
     "org.apache.fineract.cn.identity.internal.service",
     "org.apache.fineract.cn.identity.internal.repository",
-    "org.apache.fineract.cn.identity.internal.command.handler"
+    "org.apache.fineract.cn.identity.internal.command.handler",
+    "org.apache.fineract.cn.command"
 })
 public class IdentityServiceConfig extends WebMvcConfigurerAdapter {
 
