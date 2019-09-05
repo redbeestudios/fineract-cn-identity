@@ -88,3 +88,6 @@ system:
 identity:
   passwordExpiresInDays: 93
   timeToChangePasswordAfterExpirationInDays: 4
+
+kafka:
+  bootstrap-servers: localhost:9092
