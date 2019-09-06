@@ -66,7 +66,11 @@ public class UserCommandHandler {
   }
 
   @CommandHandler(logStart = CommandLogLevel.INFO, logFinish = CommandLogLevel.INFO)
-  @EventEmitter(selectorName = EventConstants.OPERATION_HEADER, selectorValue = EventConstants.OPERATION_PUT_USER_PASSWORD)
+  @EventEmitter(selectorName = EventConstants.OPERATION_HEADER,
+          selectorValue = EventConstants.OPERATION_PUT_USER_PASSWORD,
+          selectorKafkaEvent = NotificationFlag.NOTIFY,
+          selectorKafkaTopic = KafkaTopicConstants.TOPIC_IDENTITY_USER,
+          selectorKafkaTopicError = KafkaTopicConstants.TOPIC_ERROR_IDENTITY_USER)
   public String process(final ChangeUserPasswordCommand command) {
     final UserEntity user = usersRepository.get(command.getIdentifier())
         .orElseThrow(() -> ServiceException.notFound(
