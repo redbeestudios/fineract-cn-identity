@@ -49,9 +49,9 @@
         <appender-ref ref="STDOUT" />
     </logger>
 
-    <logger name="org.apache.fineract.cn.command" level="DEBUG" additivity="false">
+    <root level="DEBUG">
         <appender-ref ref="STDOUT" />
-    </logger>
+    </root>
 
 
 </configuration>
