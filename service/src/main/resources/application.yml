@@ -23,6 +23,8 @@ spring:
       enabled: true
     config:
       enabled: false
+  kafka:
+    bootstrap-servers: localhost:9092
 
 eureka:
   registration:
@@ -90,4 +92,4 @@ identity:
   timeToChangePasswordAfterExpirationInDays: 4
 
 kafka:
-  bootstrap-servers: localhost:9092
+  bootstrapAddress: localhost:9092

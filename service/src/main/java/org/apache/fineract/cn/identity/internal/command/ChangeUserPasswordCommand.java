@@ -18,10 +18,13 @@
  */
 package org.apache.fineract.cn.identity.internal.command;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+
 /**
  * @author Myrle Krantz
  */
 @SuppressWarnings("unused")
+@JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.DEFAULT)
 public class ChangeUserPasswordCommand {
   private String identifier;
 
