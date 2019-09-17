@@ -35,6 +35,10 @@
         </encoder>
     </appender>
 
+    <root level="DEBUG">
+        <appender-ref ref="STDOUT" />
+    </root>
+
     <logger name="com" level="INFO" additivity="false">
         <appender-ref ref="STDOUT" />
     </logger>
