@@ -21,7 +21,7 @@
 <configuration>
 
   <appender name="LOGSTASH" class="net.logstash.logback.appender.LogstashTcpSocketAppender">
-       <destination>localhost:6000</destination>
+       <destination>w-logstash:6000</destination>
        <keepAliveDuration>5 minutes</keepAliveDuration>
        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
           <includeMdc>false</includeMdc>
