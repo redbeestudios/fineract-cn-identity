@@ -18,12 +18,14 @@
  */
 package org.apache.fineract.cn.identity.internal.command;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import org.apache.fineract.cn.identity.api.v1.domain.UserWithPassword;
 
 /**
  * @author Myrle Krantz
  */
 @SuppressWarnings("unused")
+@JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
 public class CreateUserCommand {
   private String identifier;
   private String role;

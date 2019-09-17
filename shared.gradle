@@ -32,7 +32,7 @@ ext.versions = [
         frameworklang      : '0.1.0-BUILD-SNAPSHOT',
         frameworkasync     : '0.1.0-BUILD-SNAPSHOT',
         frameworkcassandra : '0.1.0-BUILD-SNAPSHOT',
-        frameworkcommand   : '0.1.0-BUILD-SNAPSHOT',
+        frameworkcommand   : '0.1.2-BUILD-SNAPSHOT',
         jjwt               : '0.6.0',
         hibernatevalidator : '5.3.0.Final'
 ]
@@ -44,26 +44,15 @@ tasks.withType(JavaCompile) {
 
 repositories {
     jcenter()
-    mavenLocal()
-    repositories {
-        maven {
-            url "http://registry-nd.dev.redbee.io/repository/waas-snapshot"
+    mavenLocal() 
+    maven {
+        url "http://registry-nd.dev.redbee.io/repository/waas-snapshot"
 
-            credentials {
-                username = String.valueOf(System.getenv("NEXUS_USER"))
-                password = String.valueOf(System.getenv("NEXUS_PASS"))
-            }
-
+        credentials {
+            username = String.valueOf(System.getenv("NEXUS_USER"))
+            password = String.valueOf(System.getenv("NEXUS_PASS"))
         }
-        maven {
-            url "http://registry-nd.dev.redbee.io/repository/waas"
 
-            credentials {
-                username = String.valueOf(System.getenv("NEXUS_USER"))
-                password = String.valueOf(System.getenv("NEXUS_PASS"))
-            }
-
-        }
     }
 }
 
