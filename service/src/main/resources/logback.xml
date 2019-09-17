@@ -20,6 +20,15 @@
 -->
 <configuration>
 
+  <appender name="LOGSTASH" class="net.logstash.logback.appender.LogstashTcpSocketAppender">
+       <destination>localhost:6000</destination>
+       <keepAliveDuration>5 minutes</keepAliveDuration>
+       <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+          <includeMdc>false</includeMdc>
+          <customFields>{"appname": "f-identity", "environment": "default"}</customFields>
+       </encoder>
+    </appender>
+
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
@@ -48,5 +57,9 @@
     <logger name="org.springframework.security" level="DEBUG" additivity="false">
         <appender-ref ref="STDOUT" />
     </logger>
+
+    <root level="DEBUG">
+         <appender-ref ref="LOGSTASH"/>
+      </root>
 
 </configuration>

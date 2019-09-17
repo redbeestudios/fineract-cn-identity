@@ -61,6 +61,8 @@ dependencies {
             [group: 'org.apache.fineract.cn.identity', name: 'api', version: rootProject.version],
             [group: 'org.apache.fineract.cn.anubis', name: 'api', version: versions.frameworkanubis],
             [group: 'org.apache.fineract.cn.anubis', name: 'library', version: versions.frameworkanubis],
+            [group: 'net.logstash.logback', name: 'logstash-logback-encoder', version: '4.11'],
+            [group: 'ch.qos.logback', name: 'logback-core', version: '1.1.8']
     )
 }
 
