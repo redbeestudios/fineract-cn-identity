@@ -24,7 +24,7 @@
        <destination>w-logstash:6000</destination>
        <keepAliveDuration>5 minutes</keepAliveDuration>
        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
-          <includeMdc>false</includeMdc>
+          <includeMdc>true</includeMdc>
           <customFields>{"appname": "f-identity", "environment": "default"}</customFields>
        </encoder>
     </appender>
@@ -35,35 +35,33 @@
         </encoder>
     </appender>
 
-    <root level="DEBUG">
-        <appender-ref ref="STDOUT" />
-    </root>
-
     <logger name="com" level="INFO" additivity="false">
         <appender-ref ref="STDOUT" />
+        <appender-ref ref="LOGSTASH"/>
     </logger>
 
     <logger name="org" level="INFO" additivity="false">
         <appender-ref ref="STDOUT" />
+        <appender-ref ref="LOGSTASH"/>
     </logger>
 
     <logger name="org.apache.fineract" level="DEBUG" additivity="false">
         <appender-ref ref="STDOUT" />
+        <appender-ref ref="LOGSTASH"/>
     </logger>
 
     <logger name="io" level="INFO" additivity="false">
         <appender-ref ref="STDOUT" />
+        <appender-ref ref="LOGSTASH"/>
     </logger>
 
     <logger name="net" level="INFO" additivity="false">
         <appender-ref ref="STDOUT" />
+        <appender-ref ref="LOGSTASH"/>
     </logger>
     <logger name="org.springframework.security" level="DEBUG" additivity="false">
         <appender-ref ref="STDOUT" />
+        <appender-ref ref="LOGSTASH"/>
     </logger>
-
-    <root level="DEBUG">
-         <appender-ref ref="LOGSTASH"/>
-      </root>
 
 </configuration>
