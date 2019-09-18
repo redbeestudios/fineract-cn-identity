@@ -32,6 +32,7 @@ import org.apache.fineract.cn.identity.internal.command.ChangeUserPasswordComman
 import org.apache.fineract.cn.identity.internal.command.ChangeUserRoleCommand;
 import org.apache.fineract.cn.identity.internal.command.CreateUserCommand;
 import org.apache.fineract.cn.identity.internal.service.UserService;
+import org.apache.fineract.cn.identity.internal.util.ConvertIdentifier;
 import org.apache.fineract.cn.identity.internal.util.IdentityConstants;
 import org.apache.fineract.cn.lang.ServiceException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,7 +44,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.validation.Valid;
 import java.util.List;
 import java.util.Set;
-
+import java.util.UUID;
 
 
 /**
@@ -95,7 +96,7 @@ public class UserRestController {
   @Permittable(value = AcceptedTokenType.TENANT, groupId = PermittableGroupIds.IDENTITY_MANAGEMENT)
   public @ResponseBody ResponseEntity<User> get(@PathVariable(PathConstants.IDENTIFIER_PATH_VARIABLE) final String userIdentifier)
   {
-    return new ResponseEntity<>(checkIdentifier(userIdentifier), HttpStatus.OK);
+    return new ResponseEntity<>(checkIdentifier(ConvertIdentifier.convertToUUID(userIdentifier)), HttpStatus.OK);
   }
 
   @RequestMapping(value = PathConstants.IDENTIFIER_RESOURCE_STRING + "/roleIdentifier", method = RequestMethod.PUT,
@@ -109,9 +110,10 @@ public class UserRestController {
     if (userIdentifier.equals(IdentityConstants.SU_NAME))
       throw ServiceException.badRequest("Role of user with identifier: " + userIdentifier + " cannot be changed.");
 
-    checkIdentifier(userIdentifier);
+    UUID userIdentifierUUID = ConvertIdentifier.convertToUUID(userIdentifier);
+    checkIdentifier(userIdentifierUUID);
 
-    final ChangeUserRoleCommand changeCommand = new ChangeUserRoleCommand(userIdentifier, roleIdentifier.getIdentifier());
+    final ChangeUserRoleCommand changeCommand = new ChangeUserRoleCommand(userIdentifierUUID, roleIdentifier.getIdentifier());
     this.commandGateway.process(changeCommand);
     return new ResponseEntity<>(HttpStatus.ACCEPTED);
   }
@@ -122,11 +124,10 @@ public class UserRestController {
   @Permittable(value = AcceptedTokenType.TENANT, groupId = PermittableGroupIds.IDENTITY_MANAGEMENT)
   @Permittable(value = AcceptedTokenType.TENANT, groupId = PermittableGroupIds.SELF_MANAGEMENT, permittedEndpoint = "/users/{useridentifier}/permissions")
   @ResponseBody
-  Set<Permission> getUserPermissions(@PathVariable(PathConstants.IDENTIFIER_PATH_VARIABLE) String userIdentifier)
-  {
-    checkIdentifier(userIdentifier);
+  Set<Permission> getUserPermissions(@PathVariable(PathConstants.IDENTIFIER_PATH_VARIABLE) String userIdentifier) {
+    checkIdentifier(ConvertIdentifier.convertToUUID(userIdentifier));
 
-    return service.getPermissions(userIdentifier);
+    return service.getPermissions(ConvertIdentifier.convertToUUID(userIdentifier));
   }
 
   @RequestMapping(value = PathConstants.IDENTIFIER_RESOURCE_STRING + "/password", method = RequestMethod.PUT,
@@ -142,11 +143,12 @@ public class UserRestController {
         IdentityConstants.SU_NAME))
       throw ServiceException.badRequest("Password of ''{0}'' can only be changed by themselves.", IdentityConstants.SU_NAME);
 
-    checkIdentifier(userIdentifier);
+    UUID userIdentifierUUID = ConvertIdentifier.convertToUUID(userIdentifier);
+    checkIdentifier(userIdentifierUUID);
 
     checkPassword(password);
 
-    final ChangeUserPasswordCommand changeCommand = new ChangeUserPasswordCommand(userIdentifier, password.getPassword());
+    final ChangeUserPasswordCommand changeCommand = new ChangeUserPasswordCommand(userIdentifierUUID, password.getPassword());
     this.commandGateway.process(changeCommand);
     return new ResponseEntity<>(HttpStatus.ACCEPTED);
   }
@@ -156,7 +158,7 @@ public class UserRestController {
       throw ServiceException.badRequest("password may not be empty.");
   }
 
-  private User checkIdentifier(final String identifier) {
+  private User checkIdentifier(final UUID identifier) {
     if (identifier == null)
       throw ServiceException.badRequest("identifier may not be null.");
 

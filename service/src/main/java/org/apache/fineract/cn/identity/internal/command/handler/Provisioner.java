@@ -130,7 +130,7 @@ public class Provisioner {
           logger.info("Changing password for tenant '{}' instead of provisioning...", TenantContextHolder
               .checkedGetIdentifier());
           final UserEntity suUser = userEntityCreator
-              .build(IdentityConstants.SU_NAME, IdentityConstants.SU_ROLE, initialPasswordHash, true,
+              .build(IdentityConstants.SU_NAME_UUID, IdentityConstants.SU_ROLE, initialPasswordHash, true,
                   fixedSalt.get().array(), timeToChangePasswordAfterExpirationInDays);
           users.add(suUser);
           logger.info("Successfully changed admin password '{}'...", TenantContextHolder.checkedGetIdentifier());
@@ -180,7 +180,7 @@ public class Provisioner {
       roles.add(suRole);
 
       final UserEntity suUser = userEntityCreator
-              .build(IdentityConstants.SU_NAME, IdentityConstants.SU_ROLE, initialPasswordHash, true,
+              .build(IdentityConstants.SU_NAME_UUID, IdentityConstants.SU_ROLE, initialPasswordHash, true,
                       fixedSalt, timeToChangePasswordAfterExpirationInDays);
       users.add(suUser);
 

@@ -24,6 +24,7 @@ import com.datastax.driver.mapping.annotations.PartitionKey;
 import com.datastax.driver.mapping.annotations.Table;
 
 import java.nio.ByteBuffer;
+import java.util.UUID;
 
 /**
  * @author Myrle Krantz
@@ -32,7 +33,7 @@ import java.nio.ByteBuffer;
 public class UserEntity {
   @PartitionKey
   @Column(name = Users.IDENTIFIER_COLUMN)
-  private String identifier;
+  private UUID identifier;
   @Column(name = Users.ROLE_COLUMN)
   private String role;
   @Column(name = Users.PASSWORD_COLUMN)
@@ -46,11 +47,11 @@ public class UserEntity {
 
   public UserEntity() {}
 
-  public String getIdentifier() {
+  public UUID getIdentifier() {
     return identifier;
   }
 
-  public void setIdentifier(String identifier) {
+  public void setIdentifier(UUID identifier) {
     this.identifier = identifier;
   }
 

@@ -31,6 +31,7 @@ import org.apache.fineract.cn.command.gateway.CommandGateway;
 import org.apache.fineract.cn.identity.internal.command.AuthenticationCommandResponse;
 import org.apache.fineract.cn.identity.internal.command.PasswordAuthenticationCommand;
 import org.apache.fineract.cn.identity.internal.command.RefreshTokenAuthenticationCommand;
+import org.apache.fineract.cn.identity.internal.util.ConvertIdentifier;
 import org.apache.fineract.cn.identity.internal.util.IdentityConstants;
 import org.apache.fineract.cn.lang.ServiceException;
 import org.slf4j.Logger;
@@ -113,7 +114,7 @@ public class AuthorizationRestController {
 
         try {
           final Authentication ret = map(getAuthenticationCommandResponse(
-              new PasswordAuthenticationCommand(username, password)), response);
+              new PasswordAuthenticationCommand(ConvertIdentifier.convertToUUID(username), password)), response);
           return new ResponseEntity<>(ret, HttpStatus.OK);
         }
         catch (final AmitAuthenticationException e)

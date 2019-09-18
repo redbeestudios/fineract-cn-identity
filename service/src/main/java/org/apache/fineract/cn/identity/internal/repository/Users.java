@@ -34,6 +34,7 @@ import org.springframework.util.Assert;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 /**
  * @author Myrle Krantz
@@ -66,7 +67,7 @@ public class Users {
   public void buildTable() {
     final Create create = SchemaBuilder.createTable(TABLE_NAME)
         .ifNotExists()
-        .addPartitionKey(IDENTIFIER_COLUMN, DataType.text())
+        .addPartitionKey(IDENTIFIER_COLUMN, DataType.uuid())
         .addColumn(ROLE_COLUMN, DataType.text())
         .addColumn(PASSWORD_COLUMN, DataType.blob())
         .addColumn(SALT_COLUMN, DataType.blob())
@@ -81,7 +82,7 @@ public class Users {
   }
 
 
-  public Optional<UserEntity> get(final String identifier)
+  public Optional<UserEntity> get(final UUID identifier)
   {
     final UserEntity instance =
         tenantAwareCassandraMapperProvider.getMapper(UserEntity.class).get(identifier);

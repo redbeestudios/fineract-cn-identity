@@ -44,6 +44,7 @@ import org.apache.fineract.cn.identity.internal.repository.Signatures;
 import org.apache.fineract.cn.identity.internal.repository.Tenants;
 import org.apache.fineract.cn.identity.internal.repository.UserEntity;
 import org.apache.fineract.cn.identity.internal.repository.Users;
+import org.apache.fineract.cn.identity.internal.util.ConvertIdentifier;
 import org.apache.fineract.cn.lang.ApplicationName;
 import org.apache.fineract.cn.lang.DateConverter;
 import org.apache.fineract.cn.lang.security.RsaKeyPairFactory;
@@ -73,6 +74,7 @@ import static org.mockito.Mockito.when;
  */
 public class AuthenticationCommandHandlerTest {
   private static final String USER_NAME = "me";
+  private static final UUID USER_NAME_UUID = UUID.fromString("00000000-0000-0000-0000-000000000000");;
   private static final String ROLE = "I";
   private static final String PASSWORD = "mine";
   private static final int ITERATION_COUNT = 20;
@@ -128,13 +130,13 @@ public class AuthenticationCommandHandlerTest {
 
     final UserEntity userEntity = new UserEntity();
     userEntity.setRole(ROLE);
-    userEntity.setIdentifier(USER_NAME);
+    userEntity.setIdentifier(USER_NAME_UUID);
     userEntity.setIterationCount(ITERATION_COUNT);
     userEntity.setPassword(ByteBuffer.wrap(PASSWORD.getBytes()));
     userEntity.setSalt(ByteBuffer.wrap(new SaltGenerator().createRandomSalt()));
     userEntity.setPasswordExpiresOn(dataStaxNow());
 
-    when(users.get(USER_NAME)).thenReturn(Optional.of(userEntity));
+    when(users.get(USER_NAME_UUID)).thenReturn(Optional.of(userEntity));
 
     final List<PermissionType> permissionsList = new ArrayList<>();
     final RoleEntity roleEntity = new RoleEntity(ROLE, permissionsList);
@@ -148,7 +150,7 @@ public class AuthenticationCommandHandlerTest {
     final TokenSerializationResult refreshTokenSerializationResult = new TokenSerializationResult("blah", LocalDateTime.now(ZoneId.of("UTC")).plusSeconds(REFRESH_TOKEN_TIME_TO_LIVE));
     when(tenantRefreshTokenSerializer.build(anyObject())).thenReturn(refreshTokenSerializationResult);
 
-    final TokenDeserializationResult deserialized = new TokenDeserializationResult(USER_NAME, Date.from(Instant.now().plusSeconds(REFRESH_TOKEN_TIME_TO_LIVE)), TEST_APPLICATION_NAME, null);
+    final TokenDeserializationResult deserialized = new TokenDeserializationResult(ConvertIdentifier.convertToString(USER_NAME_UUID), Date.from(Instant.now().plusSeconds(REFRESH_TOKEN_TIME_TO_LIVE)), TEST_APPLICATION_NAME, null);
     when(tenantRefreshTokenSerializer.deserialize(anyObject(), anyObject())).thenReturn(deserialized);
 
     when(hashGenerator.isEqual(any(), any(), any(), any(), anyInt(), anyInt())).thenReturn(true);
@@ -162,7 +164,7 @@ public class AuthenticationCommandHandlerTest {
   @Test
   public void correctPasswordAuthentication()
   {
-    final PasswordAuthenticationCommand command = new PasswordAuthenticationCommand(USER_NAME, PASSWORD);
+    final PasswordAuthenticationCommand command = new PasswordAuthenticationCommand(USER_NAME_UUID, PASSWORD);
 
     final AuthenticationCommandResponse commandResponse = commandHandler.process(command);
     Assert.assertNotNull(commandResponse);

@@ -43,8 +43,7 @@ public class UserService {
   private final Roles roles;
 
   @Autowired
-  UserService(final Users users, final Roles roles)
-  {
+  UserService(final Users users, final Roles roles) {
     this.users = users;
     this.roles = roles;
   }
@@ -53,8 +52,8 @@ public class UserService {
     return users.getAll().stream().map(UserService::mapUser).collect(Collectors.toList());
   }
 
-  public Optional<User> findByIdentifier(final String identifier)
-  {
+  public Optional<User> findByIdentifier(final UUID identifier) {
+
     return users.get(identifier).map(UserService::mapUser);
   }
 
@@ -62,7 +61,7 @@ public class UserService {
     return new User(u.getIdentifier(), u.getRole());
   }
 
-  public Set<Permission> getPermissions(final String userIdentifier) {
+  public Set<Permission> getPermissions(final UUID userIdentifier) {
     final Optional<UserEntity> userEntity = users.get(userIdentifier);
     final Optional<RoleEntity> roleEntity = userEntity.map(UserEntity::getRole).map(roles::get).orElse(Optional.empty());
     final List<PermissionType> permissionEntities = roleEntity.map(RoleEntity::getPermissions).orElse(Collections.emptyList());

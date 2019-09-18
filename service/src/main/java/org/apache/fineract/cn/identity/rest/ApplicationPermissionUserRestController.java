@@ -26,6 +26,7 @@ import org.apache.fineract.cn.command.gateway.CommandGateway;
 import org.apache.fineract.cn.identity.internal.command.SetApplicationPermissionUserEnabledCommand;
 import org.apache.fineract.cn.identity.internal.service.ApplicationService;
 import org.apache.fineract.cn.identity.internal.service.UserService;
+import org.apache.fineract.cn.identity.internal.util.ConvertIdentifier;
 import org.apache.fineract.cn.lang.ServiceException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -36,6 +37,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.UUID;
 
 /**
  * @author Myrle Krantz
@@ -70,7 +73,9 @@ public class ApplicationPermissionUserRestController {
                                          @RequestBody Boolean enabled)
   {
     ApplicationRestController.checkApplicationPermissionIdentifier(service, applicationIdentifier, permittableEndpointGroupIdentifier);
-    checkUserIdentifier(userIdentifier);
+
+
+    checkUserIdentifier(ConvertIdentifier.convertToUUID(userIdentifier));
     commandGateway.process(new SetApplicationPermissionUserEnabledCommand(applicationIdentifier, permittableEndpointGroupIdentifier, userIdentifier, enabled));
     return ResponseEntity.accepted().build();
   }
@@ -85,11 +90,12 @@ public class ApplicationPermissionUserRestController {
                                          @PathVariable("permissionidentifier") String permittableEndpointGroupIdentifier,
                                          @PathVariable("useridentifier") String userIdentifier) {
     ApplicationRestController.checkApplicationPermissionIdentifier(service, applicationIdentifier, permittableEndpointGroupIdentifier);
-    checkUserIdentifier(userIdentifier);
+
+    checkUserIdentifier(ConvertIdentifier.convertToUUID(userIdentifier));
     return ResponseEntity.ok(service.applicationPermissionEnabledForUser(applicationIdentifier, permittableEndpointGroupIdentifier, userIdentifier));
   }
 
-  private void checkUserIdentifier(final @Nonnull String identifier) {
+  private void checkUserIdentifier(final @Nonnull UUID identifier) {
     userService.findByIdentifier(identifier).orElseThrow(
             () -> ServiceException.notFound("User ''" + identifier + "'' doesn''t exist."));
   }

@@ -18,28 +18,30 @@
  */
 package org.apache.fineract.cn.identity.internal.command;
 
+import java.util.UUID;
+
 /**
  * @author Myrle Krantz
  */
 @SuppressWarnings("unused")
 public class PasswordAuthenticationCommand {
-  private String useridentifier;
+  private UUID useridentifier;
   private transient String password;
 
   PasswordAuthenticationCommand() {}
 
   public PasswordAuthenticationCommand(
-      final String useridentifier,
+      final UUID useridentifier,
       final String password) {
     this.useridentifier = useridentifier;
     this.password = password;
   }
 
-  public String getUseridentifier() {
+  public UUID getUseridentifier() {
     return useridentifier;
   }
 
-  public void setUseridentifier(String useridentifier) {
+  public void setUseridentifier(UUID useridentifier) {
     this.useridentifier = useridentifier;
   }
 

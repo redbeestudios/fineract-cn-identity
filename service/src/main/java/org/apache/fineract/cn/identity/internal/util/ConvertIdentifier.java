@@ -18,20 +18,25 @@
  */
 package org.apache.fineract.cn.identity.internal.util;
 
+import org.apache.fineract.cn.lang.ServiceException;
+
 import java.util.UUID;
 
-/**
- * @author Myrle Krantz
- */
-public interface IdentityConstants {
-  String SU_ROLE = "pharaoh";
-  String SU_NAME = "antony";
-  int ITERATION_COUNT = 4096;
-  int HASH_LENGTH = 256;
-  int CURRENT_VERSION = 0;
-  String LOGGER_NAME = "identity-logger";
-  String JSON_SERIALIZER_NAME = "identity-json-serializer";
+import static org.apache.fineract.cn.identity.internal.util.IdentityConstants.UUID_IDENTIFIER;
 
-  UUID SU_NAME_UUID = UUID.fromString("00000000-0000-0000-0000-000000000000");
-  String UUID_IDENTIFIER = "UUID identifier";
+public class ConvertIdentifier {
+
+
+    // TODO meter este metodo en un validador generico
+    public static UUID convertToUUID(String identifier) {
+        try {
+            return UUID.fromString(identifier);
+        } catch (IllegalArgumentException ex) {
+            throw ServiceException.badRequest(String.format("Error during converting %s [%s]" , UUID_IDENTIFIER, identifier));
+        }
+    }
+
+    public static String convertToString(UUID identifier) {
+        return identifier.toString();
+    }
 }

@@ -20,13 +20,15 @@ package org.apache.fineract.cn.identity.internal.command;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 
+import java.util.UUID;
+
 /**
  * @author Myrle Krantz
  */
 @SuppressWarnings("unused")
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.DEFAULT)
 public class ChangeUserPasswordCommand {
-  private String identifier;
+  private UUID identifier;
 
   //transient to ensure this field doesn't land in the audit log.
   private transient String password;
@@ -34,16 +36,16 @@ public class ChangeUserPasswordCommand {
   public ChangeUserPasswordCommand() {
   }
 
-  public ChangeUserPasswordCommand(final String identifier, final String password) {
+  public ChangeUserPasswordCommand(final UUID identifier, final String password) {
     this.identifier = identifier;
     this.password = password;
   }
 
-  public String getIdentifier() {
+  public UUID getIdentifier() {
     return identifier;
   }
 
-  public void setIdentifier(String identifier) {
+  public void setIdentifier(UUID identifier) {
     this.identifier = identifier;
   }
 
@@ -58,7 +60,7 @@ public class ChangeUserPasswordCommand {
   @Override
   public String toString() {
     return "ChangeUserPasswordCommand{" +
-            "identifier='" + identifier + '\'' +
+            "identifier='" + identifier.toString() + '\'' +
             '}';
   }
 }

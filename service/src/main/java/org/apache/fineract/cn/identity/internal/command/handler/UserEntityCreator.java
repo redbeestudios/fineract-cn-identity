@@ -21,6 +21,8 @@ package org.apache.fineract.cn.identity.internal.command.handler;
 import com.datastax.driver.core.LocalDate;
 import java.nio.ByteBuffer;
 import java.util.Optional;
+import java.util.UUID;
+
 import org.apache.fineract.cn.crypto.HashGenerator;
 import org.apache.fineract.cn.crypto.SaltGenerator;
 import org.apache.fineract.cn.identity.internal.repository.PrivateTenantInfoEntity;
@@ -56,7 +58,7 @@ public class UserEntityCreator {
 
 
   UserEntity build(
-          final String identifier,
+          final UUID identifier,
           final String role,
           final String password,
           final boolean passwordMustChange) {
@@ -70,7 +72,7 @@ public class UserEntityCreator {
   }
 
   public  UserEntity build(
-          final String identifier,
+          final UUID identifier,
           final String role,
           final String password,
           final boolean passwordMustChange,

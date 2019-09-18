@@ -21,13 +21,15 @@ package org.apache.fineract.cn.identity.internal.command;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import org.apache.fineract.cn.identity.api.v1.domain.UserWithPassword;
 
+import java.util.UUID;
+
 /**
  * @author Myrle Krantz
  */
 @SuppressWarnings("unused")
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
 public class CreateUserCommand {
-  private String identifier;
+  private UUID identifier;
   private String role;
 
   //transient to ensure this field doesn't land in the audit log.
@@ -42,11 +44,11 @@ public class CreateUserCommand {
     this.password = instance.getPassword();
   }
 
-  public String getIdentifier() {
+  public UUID getIdentifier() {
     return identifier;
   }
 
-  public void setIdentifier(String identifier) {
+  public void setIdentifier(UUID identifier) {
     this.identifier = identifier;
   }
 
@@ -69,7 +71,7 @@ public class CreateUserCommand {
   @Override
   public String toString() {
     return "CreateUserCommand{" +
-            "identifier='" + identifier + '\'' +
+            "identifier='" + identifier.toString() + '\'' +
             ", role='" + role + '\'' +
             '}';
   }

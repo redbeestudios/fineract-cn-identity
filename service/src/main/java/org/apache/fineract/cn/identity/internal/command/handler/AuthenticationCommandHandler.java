@@ -59,6 +59,7 @@ import org.apache.fineract.cn.identity.internal.repository.Tenants;
 import org.apache.fineract.cn.identity.internal.repository.UserEntity;
 import org.apache.fineract.cn.identity.internal.repository.Users;
 import org.apache.fineract.cn.identity.internal.service.RoleMapper;
+import org.apache.fineract.cn.identity.internal.util.ConvertIdentifier;
 import org.apache.fineract.cn.identity.internal.util.IdentityConstants;
 import org.apache.fineract.cn.lang.ApplicationName;
 import org.apache.fineract.cn.lang.DateConverter;
@@ -168,8 +169,7 @@ public class AuthenticationCommandHandler {
     try {
       base64decodedPassword = Base64Utils.decodeFromString(command.getPassword());
     }
-    catch (final IllegalArgumentException e)
-    {
+    catch (final IllegalArgumentException e) {
       throw ServiceException.badRequest("Password was not base64 encoded.");
     }
 
@@ -201,7 +201,7 @@ public class AuthenticationCommandHandler {
             refreshToken.getToken(),
             refreshToken.getExpiration());
 
-    fireAuthenticationEvent(user.getIdentifier());
+    fireAuthenticationEvent(ConvertIdentifier.convertToString(user.getIdentifier()));
 
     return ret;
   }
@@ -251,7 +251,7 @@ public class AuthenticationCommandHandler {
     final PrivateTenantInfoEntity privateTenantInfo = checkedGetPrivateTenantInfo();
     final PrivateSignatureEntity privateSignature = checkedGetPrivateSignature();
 
-    final UserEntity user = getUser(deserializedRefreshToken.getUserIdentifier());
+    final UserEntity user = getUser(ConvertIdentifier.convertToUUID(deserializedRefreshToken.getUserIdentifier()));
     final String sourceApplicationName = deserializedRefreshToken.getSourceApplication();
 
     return getAuthenticationResponse(
@@ -338,7 +338,7 @@ public class AuthenticationCommandHandler {
               LocalTime.MIDNIGHT));
   }
 
-  private UserEntity getUser(final String identifier) throws AmitAuthenticationException {
+  private UserEntity getUser(final UUID identifier) throws AmitAuthenticationException {
     final Optional<UserEntity> user = users.get(identifier);
     if (!user.isPresent()) {
       this.logger.info("Attempt to get a user who doesn't exist: " + identifier);
@@ -350,7 +350,7 @@ public class AuthenticationCommandHandler {
 
   private void fireAuthenticationEvent(final String userIdentifier) {
     this.jmsTemplate.convertAndSend(
-        this.gson.toJson(userIdentifier),
+          this.gson.toJson(userIdentifier),
         message -> {
           if (TenantContextHolder.identifier().isPresent()) {
             //noinspection OptionalGetWithoutIsPresent
@@ -367,7 +367,7 @@ public class AuthenticationCommandHandler {
   }
 
   private TokenSerializationResult getAuthenticationResponse(
-          final String userIdentifier,
+          final UUID userIdentifier,
           final Set<TokenPermission> tokenPermissions,
           final PrivateSignatureEntity privateSignatureEntity,
           final String sourceApplication) {
@@ -383,7 +383,7 @@ public class AuthenticationCommandHandler {
               .setPrivateKey(privateKey)
               .setTokenContent(new TokenContent(new ArrayList<>(tokenPermissions)))
               .setSecondsToLive(accessTtl)
-              .setUser(userIdentifier)
+              .setUser(ConvertIdentifier.convertToString(userIdentifier))
               .setSourceApplication(sourceApplication);
 
       return tenantAccessTokenSerializer.build(x);
@@ -427,7 +427,7 @@ public class AuthenticationCommandHandler {
   }
 
   private Set<TokenPermission> getApplicationCallEndpointSetTokenPermissions(
-          final String userIdentifier,
+          final UUID userIdentifier,
           final RoleEntity userRole,
           final ApplicationCallEndpointSetEntity applicationCallEndpointSet,
           final String sourceApplicationName) {
@@ -443,11 +443,11 @@ public class AuthenticationCommandHandler {
 
     final Set<PermissionType> permissionsPossible = applicationRequestedPermissionsTheUserHas
             .filter(x ->
-                    applicationPermissionUsers.enabled(sourceApplicationName, x.getPermittableGroupIdentifier(), userIdentifier))
+                    applicationPermissionUsers.enabled(sourceApplicationName, x.getPermittableGroupIdentifier(), ConvertIdentifier.convertToString(userIdentifier)))
             .collect(Collectors.toSet());
 
     if (!permissionsPossible.containsAll(permissionsRequestedByApplication))
-      throw AmitAuthenticationException.applicationMissingPermissions(userIdentifier, sourceApplicationName);
+      throw AmitAuthenticationException.applicationMissingPermissions(ConvertIdentifier.convertToString(userIdentifier), sourceApplicationName);
 
     return permissionsPossible.stream()
             .flatMap(this::mapPermissions)
@@ -455,7 +455,7 @@ public class AuthenticationCommandHandler {
   }
 
   private Set<TokenPermission> getApplicationUserTokenPermissions(
-          final String userIdentifier,
+          final UUID userIdentifier,
           final RoleEntity userRole,
           final String sourceApplicationName) {
     final List<PermissionType> permissionsForUser = userRole.getPermissions();
@@ -466,7 +466,7 @@ public class AuthenticationCommandHandler {
 
     return applicationRequestedPermissionsTheUserHas
             .filter(x ->
-                    applicationPermissionUsers.enabled(sourceApplicationName, x.getPermittableGroupIdentifier(), userIdentifier))
+                    applicationPermissionUsers.enabled(sourceApplicationName, x.getPermittableGroupIdentifier(), ConvertIdentifier.convertToString(userIdentifier)))
             .flatMap(this::mapPermissions)
             .collect(Collectors.toSet());
   }
@@ -579,7 +579,7 @@ public class AuthenticationCommandHandler {
             .setKeyTimestamp(privateSignatureEntity.getKeyTimestamp())
             .setPrivateKey(privateKey)
             .setSecondsToLive(refreshTtl)
-            .setUser(user.getIdentifier())
+            .setUser(ConvertIdentifier.convertToString(user.getIdentifier()))
             .setSourceApplication(applicationName.toString());
 
     return tenantRefreshTokenSerializer.build(x);

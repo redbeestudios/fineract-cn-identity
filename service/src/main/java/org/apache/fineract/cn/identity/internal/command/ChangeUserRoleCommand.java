@@ -18,27 +18,29 @@
  */
 package org.apache.fineract.cn.identity.internal.command;
 
+import java.util.UUID;
+
 /**
  * @author Myrle Krantz
  */
 @SuppressWarnings("unused")
 public class ChangeUserRoleCommand {
-  private String identifier;
+  private UUID identifier;
   private String role;
 
   public ChangeUserRoleCommand() {
   }
 
-  public ChangeUserRoleCommand(final String identifier, final String role) {
+  public ChangeUserRoleCommand(final UUID identifier, final String role) {
     this.identifier = identifier;
     this.role = role;
   }
 
-  public String getIdentifier() {
+  public UUID getIdentifier() {
     return identifier;
   }
 
-  public void setIdentifier(String identifier) {
+  public void setIdentifier(UUID identifier) {
     this.identifier = identifier;
   }
 
@@ -53,7 +55,7 @@ public class ChangeUserRoleCommand {
   @Override
   public String toString() {
     return "ChangeUserRoleCommand{" +
-            "identifier='" + identifier + '\'' +
+            "identifier='" + identifier.toString() + '\'' +
             ", role='" + role + '\'' +
             '}';
   }

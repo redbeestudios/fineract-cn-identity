@@ -62,7 +62,7 @@ public class UserCommandHandler {
     user.setRole(command.getRole());
     usersRepository.add(user);
 
-    return user.getIdentifier();
+    return user.getIdentifier().toString();
   }
 
   @CommandHandler(logStart = CommandLogLevel.INFO, logFinish = CommandLogLevel.INFO)
@@ -81,7 +81,7 @@ public class UserCommandHandler {
             !SecurityContextHolder.getContext().getAuthentication().getName().equals(command.getIdentifier()));
     usersRepository.add(userWithNewPassword);
 
-    return user.getIdentifier();
+    return user.getIdentifier().toString();
   }
 
   @CommandHandler(logStart = CommandLogLevel.INFO, logFinish = CommandLogLevel.INFO)
@@ -98,6 +98,6 @@ public class UserCommandHandler {
 
     usersRepository.add(userEntity);
 
-    return command.getIdentifier();
+    return command.getIdentifier().toString();
   }
 }
