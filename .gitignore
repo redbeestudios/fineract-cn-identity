@@ -16,6 +16,9 @@ gradle-app.setting
 /out
 /api/out
 /service/out
+/api/gradle
+/api/gradlew
+/api/gradlew.bat
 
 *.toDelete
 

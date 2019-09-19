@@ -31,7 +31,9 @@ import java.util.Objects;
 @SuppressWarnings({"unused", "WeakerAccess"})
 @ScriptAssert(lang = "javascript", script = "_this.identifier !== \"guest\" && _this.identifier !== \"seshat\" && _this.identifier !== \"system\" && _this.identifier !== \"wepemnefret\"" )
 public class UserWithPassword {
-  @ValidIdentifier
+
+  @NotBlank
+  @Length(min = 4, max = 32)
   private String identifier;
 
   @ValidIdentifier
