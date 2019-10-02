@@ -93,3 +93,11 @@ identity:
 
 kafka:
   bootstrapAddress: localhost:9092
+
+logging:
+  level:
+    org: info
+    org.apache.fineract: debug
+    com: info
+    io: info
+    net: info

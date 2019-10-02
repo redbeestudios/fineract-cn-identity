@@ -76,6 +76,10 @@ dependencies {
     compile (group: 'org.apache.fineract.cn', name: 'command', version: versions.frameworkcommand)
 }
 
+configurations.all {
+    resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+}
+
 publishToMavenLocal.dependsOn bootRepackage
 
 

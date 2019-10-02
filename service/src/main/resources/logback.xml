@@ -35,33 +35,9 @@
         </encoder>
     </appender>
 
-    <logger name="com" level="INFO" additivity="false">
-        <appender-ref ref="STDOUT" />
+    <root level="INFO">
         <appender-ref ref="LOGSTASH"/>
-    </logger>
-
-    <logger name="org" level="INFO" additivity="false">
-        <appender-ref ref="STDOUT" />
-        <appender-ref ref="LOGSTASH"/>
-    </logger>
-
-    <logger name="org.apache.fineract" level="DEBUG" additivity="false">
-        <appender-ref ref="STDOUT" />
-        <appender-ref ref="LOGSTASH"/>
-    </logger>
-
-    <logger name="io" level="INFO" additivity="false">
-        <appender-ref ref="STDOUT" />
-        <appender-ref ref="LOGSTASH"/>
-    </logger>
-
-    <logger name="net" level="INFO" additivity="false">
-        <appender-ref ref="STDOUT" />
-        <appender-ref ref="LOGSTASH"/>
-    </logger>
-    <logger name="org.springframework.security" level="DEBUG" additivity="false">
-        <appender-ref ref="STDOUT" />
-        <appender-ref ref="LOGSTASH"/>
-    </logger>
+        <appender-ref ref="STDOUT"/>
+    </root>
 
 </configuration>
