@@ -203,6 +203,7 @@ public class AuthorizationRestController {
     return new Authentication(
             commandResponse.getAccessToken(),
             commandResponse.getAccessTokenExpiration(),
+            commandResponse.getRefreshToken(),
             commandResponse.getRefreshTokenExpiration(),
             commandResponse.getPasswordExpiration());
   }

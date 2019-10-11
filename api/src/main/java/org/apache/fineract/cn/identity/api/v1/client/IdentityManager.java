@@ -18,6 +18,7 @@
  */
 package org.apache.fineract.cn.identity.api.v1.client;
 
+import org.apache.fineract.cn.api.annotation.ThrowsExceptions;
 import org.apache.fineract.cn.identity.api.v1.domain.Authentication;
 import org.apache.fineract.cn.identity.api.v1.domain.CallEndpointSet;
 import org.apache.fineract.cn.identity.api.v1.domain.Password;
@@ -119,7 +120,10 @@ public interface IdentityManager extends Anubis {
   @RequestMapping(value = "/users", method = RequestMethod.POST,
       consumes = {MediaType.APPLICATION_JSON_VALUE},
       produces = {MediaType.APPLICATION_JSON_VALUE})
-  @ThrowsException(status = HttpStatus.CONFLICT, exception = UserAlreadyExistsException.class)
+  @ThrowsExceptions({
+          @ThrowsException(status = HttpStatus.CONFLICT, exception = UserAlreadyExistsException.class),
+          @ThrowsException(status = HttpStatus.BAD_REQUEST, exception = UserValidationException.class)
+  })
   void createUser(@RequestBody UserWithPassword user);
 
   @RequestMapping(value = "/users/{useridentifier}/roleIdentifier", method = RequestMethod.PUT,

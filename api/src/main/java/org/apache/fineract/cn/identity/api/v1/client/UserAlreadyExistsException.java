@@ -18,9 +18,15 @@
  */
 package org.apache.fineract.cn.identity.api.v1.client;
 
+import feign.Response;
+import org.apache.fineract.cn.api.client.FineractException;
+
 /**
  * @author Myrle Krantz
  */
 @SuppressWarnings("WeakerAccess")
-public class UserAlreadyExistsException extends RuntimeException {
+public class UserAlreadyExistsException extends FineractException {
+    public UserAlreadyExistsException(Response response) {
+        super(response);
+    }
 }

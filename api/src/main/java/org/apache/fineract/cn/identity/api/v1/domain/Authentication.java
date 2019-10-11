@@ -21,6 +21,7 @@ package org.apache.fineract.cn.identity.api.v1.domain;
 import org.hibernate.validator.constraints.NotBlank;
 
 import javax.annotation.Nullable;
+import javax.validation.constraints.Null;
 import java.util.Objects;
 
 /**
@@ -36,6 +37,9 @@ public class Authentication {
 
   @NotBlank
   private String accessTokenExpiration;
+
+  @NotBlank
+  private String refreshToken;
 
   @NotBlank
   private String refreshTokenExpiration;
@@ -54,11 +58,13 @@ public class Authentication {
   public Authentication(
       final String accessToken,
       final String accessTokenExpiration,
+      final String refreshToken,
       final String refreshTokenExpiration,
       final String passwordExpiration) {
     this.tokenType = "bearer";
     this.accessToken = accessToken;
     this.accessTokenExpiration = accessTokenExpiration;
+    this.refreshToken = refreshToken;
     this.refreshTokenExpiration = refreshTokenExpiration;
     this.passwordExpiration = passwordExpiration;
   }
@@ -87,6 +93,15 @@ public class Authentication {
     this.accessTokenExpiration = accessTokenExpiration;
   }
 
+  public String getRefreshToken() {
+    return refreshToken;
+  }
+
+  public void setRefreshToken(String refreshToken) {
+    this.refreshToken = refreshToken;
+  }
+
+
   public String getRefreshTokenExpiration() {
     return refreshTokenExpiration;
   }
@@ -113,12 +128,13 @@ public class Authentication {
         Objects.equals(accessToken, that.accessToken) &&
         Objects.equals(accessTokenExpiration, that.accessTokenExpiration) &&
         Objects.equals(refreshTokenExpiration, that.refreshTokenExpiration) &&
+        Objects.equals(refreshToken, that.refreshToken) &&
         Objects.equals(passwordExpiration, that.passwordExpiration);
   }
 
   @Override public int hashCode() {
     return Objects
-        .hash(tokenType, accessToken, accessTokenExpiration, refreshTokenExpiration,
+        .hash(tokenType, accessToken, accessTokenExpiration, refreshToken, refreshTokenExpiration,
             passwordExpiration);
   }
 
@@ -127,6 +143,7 @@ public class Authentication {
         "tokenType='" + tokenType + '\'' +
         ", accessToken='" + accessToken + '\'' +
         ", accessTokenExpiration='" + accessTokenExpiration + '\'' +
+        ", refreshToken='" + refreshToken + '\'' +
         ", refreshTokenExpiration='" + refreshTokenExpiration + '\'' +
         ", passwordExpiration='" + passwordExpiration + '\'' +
         '}';
