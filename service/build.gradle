@@ -82,11 +82,9 @@ configurations.all {
 
 publishToMavenLocal.dependsOn bootRepackage
 
-def dockerImgName = 'fineract-cn-identity'
-
 ////START Build docker image
 if (!project.hasProperty("dockerImgName")) {
-    ext.dockerImgName = "${dockerImgName}"
+    ext.dockerImgName = "fineract-cn-identity"
 }
 if (!project.hasProperty("dockerTag")) {
     ext.dockerTag = "latest"
@@ -97,6 +95,7 @@ if (!project.hasProperty("dockerRegistry")) {
 if (!project.hasProperty("dockerPushToRegistry")) {
     ext.dockerPushToRegistry = true
 }
+def artifactName = "${dockerImgName}".replace('/','-')
 task buildDocker(type: Docker, dependsOn: build) {
     baseImage = "openjdk:8-jdk-alpine"
     maintainer = "vbees"
@@ -107,13 +106,13 @@ task buildDocker(type: Docker, dependsOn: build) {
     tag = "${dockerRegistry}/${dockerImgName}"
     addFile {
         from bootRepackage
-        rename { "${dockerImgName}.jar" }
+        rename { "${artifactName}.jar" }
     }
     addFile("./java-entrypoint.sh", "/java-entrypoint.sh")
     //exposePort(8080)
 
     entryPoint([
         "/java-entrypoint.sh",
-        "/${dockerImgName}.jar"
+        "/${artifactName}.jar"
     ])
 }
