@@ -18,6 +18,7 @@
  */
 package org.apache.fineract.cn.identity.rest;
 
+import java.util.Optional;
 import org.apache.fineract.cn.identity.api.v1.PermittableGroupIds;
 import org.apache.fineract.cn.anubis.annotation.AcceptedTokenType;
 import org.apache.fineract.cn.anubis.annotation.Permittable;
@@ -31,6 +32,7 @@ import org.apache.fineract.cn.identity.api.v1.domain.UserWithPassword;
 import org.apache.fineract.cn.identity.internal.command.ChangeUserPasswordCommand;
 import org.apache.fineract.cn.identity.internal.command.ChangeUserRoleCommand;
 import org.apache.fineract.cn.identity.internal.command.CreateUserCommand;
+import org.apache.fineract.cn.identity.internal.command.CreateUserWithSocialMediaCommand;
 import org.apache.fineract.cn.identity.internal.service.UserService;
 import org.apache.fineract.cn.identity.internal.util.IdentityConstants;
 import org.apache.fineract.cn.lang.ServiceException;
@@ -76,7 +78,8 @@ public class UserRestController {
           consumes = {MediaType.APPLICATION_JSON_VALUE},
           produces = {MediaType.APPLICATION_JSON_VALUE})
   @Permittable(value = AcceptedTokenType.TENANT, groupId = PermittableGroupIds.IDENTITY_MANAGEMENT)
-  public @ResponseBody ResponseEntity<Void> create(@RequestBody @Valid final UserWithPassword instance)
+  public @ResponseBody ResponseEntity<Void> create(
+      @RequestBody @Valid final UserWithPassword instance)
   {
     if (instance == null)
       throw ServiceException.badRequest("Instance may not be null.");
@@ -84,9 +87,20 @@ public class UserRestController {
     if (service.findByIdentifier(instance.getIdentifier()).isPresent())
       throw ServiceException.conflict("Instance already exists with identifier:" + instance.getIdentifier());
 
-    final CreateUserCommand createCommand = new CreateUserCommand(instance);
+
+    final Object createCommand = Optional.ofNullable(instance.getPassword())
+        .<Object>map(unused -> new CreateUserCommand(instance))
+        .orElseGet(() -> createSocialMediaCommand(instance));
+
     this.commandGateway.process(createCommand);
     return new ResponseEntity<>(HttpStatus.ACCEPTED);
+  }
+
+  private CreateUserWithSocialMediaCommand createSocialMediaCommand(UserWithPassword instance) {
+    if (instance.getFirebaseToken() == null)
+      throw ServiceException.badRequest("Should include firebaseToken in the body if you going to create user with social media.");
+    return
+        new CreateUserWithSocialMediaCommand(instance);
   }
 
   @RequestMapping(value= PathConstants.IDENTIFIER_RESOURCE_STRING, method = RequestMethod.GET,

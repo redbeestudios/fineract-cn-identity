@@ -169,9 +169,9 @@ public class AuthenticationCommandHandler {
     try {
       token = FirebaseAuth.getInstance().verifyIdToken(command.getFiresbaseToken());
     } catch (FirebaseAuthException e) {
-      throw ServiceException.badRequest("Firebase token is incorrect.");
+      throw ServiceException.badRequest("Firebase token is incorrect.", e);
     } catch (final IllegalArgumentException e) {
-      throw ServiceException.badRequest("There was an error getting information from firebase token.");
+      throw ServiceException.badRequest("There was an error getting information from firebase token.", e);
     }
     final PrivateTenantInfoEntity privateTenantInfo = checkedGetPrivateTenantInfo();
     final PrivateSignatureEntity privateSignature = checkedGetPrivateSignature();

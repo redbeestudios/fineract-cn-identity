@@ -89,7 +89,6 @@ public class Users {
     if (instance != null) {
       Assert.notNull(instance.getIdentifier());
       Assert.notNull(instance.getRole());
-      Assert.notNull(instance.getPassword());
     }
 
     return Optional.ofNullable(instance);

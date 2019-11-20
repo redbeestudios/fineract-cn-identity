@@ -37,9 +37,10 @@ public class UserWithPassword {
   @ValidIdentifier
   private String role;
 
-  @NotBlank
   @Length(min = 8)
   private String password;
+
+  private String firebaseToken;
 
   public UserWithPassword()
   {
@@ -76,6 +77,14 @@ public class UserWithPassword {
     this.password = password;
   }
 
+  public String getFirebaseToken() {
+    return firebaseToken;
+  }
+
+  public void setFirebaseToken(String firebaseToken) {
+    this.firebaseToken = firebaseToken;
+  }
+
   @Override public boolean equals(Object o) {
     if (this == o)
       return true;
@@ -84,7 +93,8 @@ public class UserWithPassword {
     UserWithPassword that = (UserWithPassword) o;
     return Objects.equals(identifier, that.identifier) &&
         Objects.equals(role, that.role) &&
-        Objects.equals(password, that.password);
+        Objects.equals(password, that.password) &&
+        Objects.equals(firebaseToken, that.firebaseToken);
   }
 
   @Override public int hashCode() {
@@ -96,6 +106,7 @@ public class UserWithPassword {
         "identifier='" + identifier + '\'' +
         ", role='" + role + '\'' +
         ", password='" + password + '\'' +
+        ", firebaseToken=" + firebaseToken +'\'' +
         '}';
   }
 }
