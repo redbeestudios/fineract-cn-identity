@@ -19,6 +19,9 @@
 package org.apache.fineract.cn.identity.internal.command.handler;
 
 import com.google.common.collect.Sets;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseAuthException;
+import com.google.firebase.auth.FirebaseToken;
 import com.google.gson.Gson;
 import org.apache.fineract.cn.identity.api.v1.events.EventConstants;
 import org.apache.fineract.cn.anubis.api.v1.domain.AllowedOperation;
@@ -37,6 +40,7 @@ import org.apache.fineract.cn.command.annotation.CommandHandler;
 import org.apache.fineract.cn.command.annotation.CommandLogLevel;
 import org.apache.fineract.cn.crypto.HashGenerator;
 import org.apache.fineract.cn.identity.internal.command.AuthenticationCommandResponse;
+import org.apache.fineract.cn.identity.internal.command.FirebaseAuthenticationCommand;
 import org.apache.fineract.cn.identity.internal.command.PasswordAuthenticationCommand;
 import org.apache.fineract.cn.identity.internal.command.RefreshTokenAuthenticationCommand;
 import org.apache.fineract.cn.identity.internal.repository.AllowedOperationType;
@@ -94,6 +98,7 @@ import java.util.stream.Stream;
 @Aggregate
 @Component
 public class AuthenticationCommandHandler {
+
   private final Users users;
   private final Roles roles;
   private final PermittableGroups permittableGroups;
@@ -122,25 +127,22 @@ public class AuthenticationCommandHandler {
 
   @Autowired
   public AuthenticationCommandHandler(final Users users,
-                                      final Roles roles,
-                                      final PermittableGroups permittableGroups,
-                                      final Signatures signatures,
-                                      final Tenants tenants,
-                                      final HashGenerator hashGenerator,
-                                      @SuppressWarnings("SpringJavaAutowiringInspection")
-                                      final TenantAccessTokenSerializer tenantAccessTokenSerializer,
-                                      @SuppressWarnings("SpringJavaAutowiringInspection")
-                                        final TenantRefreshTokenSerializer tenantRefreshTokenSerializer,
-                                      @SuppressWarnings("SpringJavaAutowiringInspection")
-                                        final TenantRsaKeyProvider tenantRsaKeyProvider,
-                                      final ApplicationSignatures applicationSignatures,
-                                      final ApplicationPermissions applicationPermissions,
-                                      final ApplicationPermissionUsers applicationPermissionUsers,
-                                      final ApplicationCallEndpointSets applicationCallEndpointSets,
-                                      final JmsTemplate jmsTemplate,
-                                      final ApplicationName applicationName,
-                                      @Qualifier(IdentityConstants.JSON_SERIALIZER_NAME) final Gson gson,
-                                      @Qualifier(IdentityConstants.LOGGER_NAME) final Logger logger) {
+      final Roles roles,
+      final PermittableGroups permittableGroups,
+      final Signatures signatures,
+      final Tenants tenants,
+      final HashGenerator hashGenerator,
+      @SuppressWarnings("SpringJavaAutowiringInspection") final TenantAccessTokenSerializer tenantAccessTokenSerializer,
+      @SuppressWarnings("SpringJavaAutowiringInspection") final TenantRefreshTokenSerializer tenantRefreshTokenSerializer,
+      @SuppressWarnings("SpringJavaAutowiringInspection") final TenantRsaKeyProvider tenantRsaKeyProvider,
+      final ApplicationSignatures applicationSignatures,
+      final ApplicationPermissions applicationPermissions,
+      final ApplicationPermissionUsers applicationPermissionUsers,
+      final ApplicationCallEndpointSets applicationCallEndpointSets,
+      final JmsTemplate jmsTemplate,
+      final ApplicationName applicationName,
+      @Qualifier(IdentityConstants.JSON_SERIALIZER_NAME) final Gson gson,
+      @Qualifier(IdentityConstants.LOGGER_NAME) final Logger logger) {
     this.users = users;
     this.roles = roles;
     this.permittableGroups = permittableGroups;
@@ -161,15 +163,42 @@ public class AuthenticationCommandHandler {
   }
 
   @CommandHandler(logStart = CommandLogLevel.DEBUG, logFinish = CommandLogLevel.DEBUG)
+  public AuthenticationCommandResponse process(final FirebaseAuthenticationCommand command)
+      throws AmitAuthenticationException {
+    FirebaseToken token;
+    try {
+      token = FirebaseAuth.getInstance().verifyIdToken(command.getFiresbaseToken());
+    } catch (FirebaseAuthException e) {
+      throw ServiceException.badRequest("Firebase token is incorrect.", e);
+    } catch (final IllegalArgumentException e) {
+      throw ServiceException.badRequest("There was an error getting information from firebase token.", e);
+    }
+    final PrivateTenantInfoEntity privateTenantInfo = checkedGetPrivateTenantInfo();
+    final PrivateSignatureEntity privateSignature = checkedGetPrivateSignature();
+    final UserEntity user = getUser(token.getEmail());
+    final TokenSerializationResult refreshToken = getRefreshToken(user, privateSignature);
+    final AuthenticationCommandResponse ret = getAuthenticationResponse(
+        applicationName.toString(),
+        Optional.empty(),
+        privateTenantInfo,
+        privateSignature,
+        user,
+        refreshToken.getToken(),
+        refreshToken.getExpiration());
+
+    fireAuthenticationEvent(user.getIdentifier());
+
+    return ret;
+
+  }
+
+  @CommandHandler(logStart = CommandLogLevel.DEBUG, logFinish = CommandLogLevel.DEBUG)
   public AuthenticationCommandResponse process(final PasswordAuthenticationCommand command)
-      throws AmitAuthenticationException
-  {
+      throws AmitAuthenticationException {
     final byte[] base64decodedPassword;
     try {
       base64decodedPassword = Base64Utils.decodeFromString(command.getPassword());
-    }
-    catch (final IllegalArgumentException e)
-    {
+    } catch (final IllegalArgumentException e) {
       throw ServiceException.badRequest("Password was not base64 encoded.");
     }
 
@@ -180,26 +209,25 @@ public class AuthenticationCommandHandler {
     final UserEntity user = getUser(command.getUseridentifier());
 
     if (!this.hashGenerator.isEqual(
-            user.getPassword().array(),
-            base64decodedPassword,
-            fixedSalt,
-            user.getSalt().array(),
-            user.getIterationCount(),
-            256))
-    {
+        user.getPassword().array(),
+        base64decodedPassword,
+        fixedSalt,
+        user.getSalt().array(),
+        user.getIterationCount(),
+        256)) {
       throw AmitAuthenticationException.userPasswordCombinationNotFound();
     }
 
     final TokenSerializationResult refreshToken = getRefreshToken(user, privateSignature);
 
     final AuthenticationCommandResponse ret = getAuthenticationResponse(
-            applicationName.toString(),
-            Optional.empty(),
-            privateTenantInfo,
-            privateSignature,
-            user,
-            refreshToken.getToken(),
-            refreshToken.getExpiration());
+        applicationName.toString(),
+        Optional.empty(),
+        privateTenantInfo,
+        privateSignature,
+        user,
+        refreshToken.getToken(),
+        refreshToken.getExpiration());
 
     fireAuthenticationEvent(user.getIdentifier());
 
@@ -209,8 +237,9 @@ public class AuthenticationCommandHandler {
   private PrivateSignatureEntity checkedGetPrivateSignature() {
     final Optional<PrivateSignatureEntity> privateSignature = signatures.getPrivateSignature();
     if (!privateSignature.isPresent()) {
-      logger.error("Authentication attempted on tenant with no valid signature{}.", TenantContextHolder
-          .identifier());
+      logger.error("Authentication attempted on tenant with no valid signature{}.",
+          TenantContextHolder
+              .identifier());
       throw ServiceException.internalError("Tenant has no valid signature.");
     }
     return privateSignature.get();
@@ -219,34 +248,39 @@ public class AuthenticationCommandHandler {
   private PrivateTenantInfoEntity checkedGetPrivateTenantInfo() {
     final Optional<PrivateTenantInfoEntity> privateTenantInfo = tenants.getPrivateTenantInfo();
     if (!privateTenantInfo.isPresent()) {
-      logger.error("Authentication attempted on uninitialized tenant {}.", TenantContextHolder.identifier());
+      logger.error("Authentication attempted on uninitialized tenant {}.",
+          TenantContextHolder.identifier());
       throw ServiceException.internalError("Tenant is not initialized.");
     }
     return privateTenantInfo.get();
   }
 
   private class TenantIdentityRsaKeyProvider implements TenantApplicationRsaKeyProvider {
-    @Override
-    public PublicKey getApplicationPublicKey(final String tokenApplicationName, final String timestamp) throws InvalidKeyTimestampException {
-      if (applicationName.toString().equals(tokenApplicationName))
-        return tenantRsaKeyProvider.getPublicKey(timestamp);
 
-      final ApplicationSignatureEntity signature = applicationSignatures.get(tokenApplicationName, timestamp)
-              .orElseThrow(() -> new InvalidKeyTimestampException(timestamp));
+    @Override
+    public PublicKey getApplicationPublicKey(final String tokenApplicationName,
+        final String timestamp) throws InvalidKeyTimestampException {
+      if (applicationName.toString().equals(tokenApplicationName)) {
+        return tenantRsaKeyProvider.getPublicKey(timestamp);
+      }
+
+      final ApplicationSignatureEntity signature = applicationSignatures
+          .get(tokenApplicationName, timestamp)
+          .orElseThrow(() -> new InvalidKeyTimestampException(timestamp));
 
       return new RsaPublicKeyBuilder()
-              .setPublicKeyMod(signature.getPublicKeyMod())
-              .setPublicKeyExp(signature.getPublicKeyExp())
-              .build();
+          .setPublicKeyMod(signature.getPublicKeyMod())
+          .setPublicKeyExp(signature.getPublicKeyExp())
+          .build();
     }
   }
 
   @CommandHandler(logStart = CommandLogLevel.DEBUG, logFinish = CommandLogLevel.DEBUG)
   public AuthenticationCommandResponse process(final RefreshTokenAuthenticationCommand command)
-      throws AmitAuthenticationException
-  {
+      throws AmitAuthenticationException {
     final TokenDeserializationResult deserializedRefreshToken =
-        tenantRefreshTokenSerializer.deserialize(new TenantIdentityRsaKeyProvider(), command.getRefreshToken());
+        tenantRefreshTokenSerializer
+            .deserialize(new TenantIdentityRsaKeyProvider(), command.getRefreshToken());
 
     final PrivateTenantInfoEntity privateTenantInfo = checkedGetPrivateTenantInfo();
     final PrivateSignatureEntity privateSignature = checkedGetPrivateSignature();
@@ -255,43 +289,45 @@ public class AuthenticationCommandHandler {
     final String sourceApplicationName = deserializedRefreshToken.getSourceApplication();
 
     return getAuthenticationResponse(
-            sourceApplicationName,
-            Optional.ofNullable(deserializedRefreshToken.getEndpointSet()),
-            privateTenantInfo,
-            privateSignature,
-            user,
-            command.getRefreshToken(),
-            LocalDateTime.ofInstant(deserializedRefreshToken.getExpiration().toInstant(), ZoneId.of("UTC")));
+        sourceApplicationName,
+        Optional.ofNullable(deserializedRefreshToken.getEndpointSet()),
+        privateTenantInfo,
+        privateSignature,
+        user,
+        command.getRefreshToken(),
+        LocalDateTime
+            .ofInstant(deserializedRefreshToken.getExpiration().toInstant(), ZoneId.of("UTC")));
   }
 
   private AuthenticationCommandResponse getAuthenticationResponse(
-          final String sourceApplicationName,
-          @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-          final Optional<String> callEndpointSet,
-          final PrivateTenantInfoEntity privateTenantInfo,
-          final PrivateSignatureEntity privateSignature,
-          final UserEntity user,
-          final String refreshToken,
-          final LocalDateTime refreshTokenExpiration) {
+      final String sourceApplicationName,
+      @SuppressWarnings("OptionalUsedAsFieldOrParameterType") final Optional<String> callEndpointSet,
+      final PrivateTenantInfoEntity privateTenantInfo,
+      final PrivateSignatureEntity privateSignature,
+      final UserEntity user,
+      final String refreshToken,
+      final LocalDateTime refreshTokenExpiration) {
     final Optional<LocalDateTime> passwordExpiration = getExpiration(user);
 
     final int gracePeriod = privateTenantInfo.getTimeToChangePasswordAfterExpirationInDays();
-    if (pastGracePeriod(passwordExpiration, gracePeriod))
+    if (pastGracePeriod(passwordExpiration, gracePeriod)) {
       throw AmitAuthenticationException.passwordExpired();
+    }
 
     final Set<TokenPermission> tokenPermissions;
 
-    if (sourceApplicationName.equals(applicationName.toString())) { //ie, this is a token for the identity manager.
+    if (sourceApplicationName
+        .equals(applicationName.toString())) { //ie, this is a token for the identity manager.
       if (pastExpiration(passwordExpiration)) {
         tokenPermissions = identityEndpointsAllowedEvenWithExpiredPassword();
-        logger.info("Password expired {}", passwordExpiration.map(LocalDateTime::toString).orElse("empty"));
-      }
-      else {
+        logger.info("Password expired {}",
+            passwordExpiration.map(LocalDateTime::toString).orElse("empty"));
+      } else {
         tokenPermissions = getUserTokenPermissions(user);
       }
-    }
-    else {
-      tokenPermissions = getApplicationTokenPermissions(user, sourceApplicationName, callEndpointSet);
+    } else {
+      tokenPermissions = getApplicationTokenPermissions(user, sourceApplicationName,
+          callEndpointSet);
     }
 
     final HashSet<TokenPermission> minifiedTokenPermissions = new HashSet<>(
@@ -301,41 +337,43 @@ public class AuthenticationCommandHandler {
                 tokenPermission -> tokenPermission,
                 (currentTokenPermission, newTokenPermission) -> {
                   newTokenPermission.getAllowedOperations()
-                      .forEach(allowedOperation -> currentTokenPermission.getAllowedOperations().add(allowedOperation));
+                      .forEach(allowedOperation -> currentTokenPermission.getAllowedOperations()
+                          .add(allowedOperation));
                   return currentTokenPermission;
                 })
             )
             .values()
     );
 
-
-    logger.info("Access token for tenant '{}', user '{}', application '{}', and callEndpointSet '{}' being returned containing the permissions '{}'.",
-            TenantContextHolder.identifier().orElse("null"),
-            user.getIdentifier(),
-            sourceApplicationName,
-            callEndpointSet.orElse("null"),
-            minifiedTokenPermissions.toString());
+    logger.info(
+        "Access token for tenant '{}', user '{}', application '{}', and callEndpointSet '{}' being returned containing the permissions '{}'.",
+        TenantContextHolder.identifier().orElse("null"),
+        user.getIdentifier(),
+        sourceApplicationName,
+        callEndpointSet.orElse("null"),
+        minifiedTokenPermissions.toString());
 
     final TokenSerializationResult accessToken = getAuthenticationResponse(
-            user.getIdentifier(),
-            minifiedTokenPermissions,
-            privateSignature,
-            sourceApplicationName);
+        user.getIdentifier(),
+        minifiedTokenPermissions,
+        privateSignature,
+        sourceApplicationName);
 
     return new AuthenticationCommandResponse(
-            accessToken.getToken(), DateConverter.toIsoString(accessToken.getExpiration()),
-            refreshToken, DateConverter.toIsoString(refreshTokenExpiration),
-            passwordExpiration.map(DateConverter::toIsoString).orElse(null));
+        accessToken.getToken(), DateConverter.toIsoString(accessToken.getExpiration()),
+        refreshToken, DateConverter.toIsoString(refreshTokenExpiration),
+        passwordExpiration.map(DateConverter::toIsoString).orElse(null));
   }
 
-  private Optional<LocalDateTime> getExpiration(final UserEntity user)
-  {
-    if (user.getIdentifier().equals(IdentityConstants.SU_NAME))
+  private Optional<LocalDateTime> getExpiration(final UserEntity user) {
+    if (user.getIdentifier().equals(IdentityConstants.SU_NAME)) {
       return Optional.empty();
-    else
+    } else {
       return Optional.of(LocalDateTime.of(
-              LocalDate.ofEpochDay(user.getPasswordExpiresOn().getDaysSinceEpoch()), //Convert from cassandra LocalDate to java LocalDate.
-              LocalTime.MIDNIGHT));
+          LocalDate.ofEpochDay(user.getPasswordExpiresOn().getDaysSinceEpoch()),
+          //Convert from cassandra LocalDate to java LocalDate.
+          LocalTime.MIDNIGHT));
+    }
   }
 
   private UserEntity getUser(final String identifier) throws AmitAuthenticationException {
@@ -367,35 +405,36 @@ public class AuthenticationCommandHandler {
   }
 
   private TokenSerializationResult getAuthenticationResponse(
-          final String userIdentifier,
-          final Set<TokenPermission> tokenPermissions,
-          final PrivateSignatureEntity privateSignatureEntity,
-          final String sourceApplication) {
+      final String userIdentifier,
+      final Set<TokenPermission> tokenPermissions,
+      final PrivateSignatureEntity privateSignatureEntity,
+      final String sourceApplication) {
 
     final PrivateKey privateKey = new RsaPrivateKeyBuilder()
-          .setPrivateKeyExp(privateSignatureEntity.getPrivateKeyExp())
-          .setPrivateKeyMod(privateSignatureEntity.getPrivateKeyMod())
-          .build();
+        .setPrivateKeyExp(privateSignatureEntity.getPrivateKeyExp())
+        .setPrivateKeyMod(privateSignatureEntity.getPrivateKeyMod())
+        .build();
 
-      final TenantAccessTokenSerializer.Specification x =
-          new TenantAccessTokenSerializer.Specification()
-              .setKeyTimestamp(privateSignatureEntity.getKeyTimestamp())
-              .setPrivateKey(privateKey)
-              .setTokenContent(new TokenContent(new ArrayList<>(tokenPermissions)))
-              .setSecondsToLive(accessTtl)
-              .setUser(userIdentifier)
-              .setSourceApplication(sourceApplication);
+    final TenantAccessTokenSerializer.Specification x =
+        new TenantAccessTokenSerializer.Specification()
+            .setKeyTimestamp(privateSignatureEntity.getKeyTimestamp())
+            .setPrivateKey(privateKey)
+            .setTokenContent(new TokenContent(new ArrayList<>(tokenPermissions)))
+            .setSecondsToLive(accessTtl)
+            .setUser(userIdentifier)
+            .setSourceApplication(sourceApplication);
 
-      return tenantAccessTokenSerializer.build(x);
+    return tenantAccessTokenSerializer.build(x);
   }
 
   private Set<TokenPermission> getUserTokenPermissions(
-          final UserEntity user) {
+      final UserEntity user) {
 
     final Optional<RoleEntity> userRole = roles.get(user.getRole());
     final Set<TokenPermission> tokenPermissions = userRole
-            .map(r -> r.getPermissions().stream().flatMap(this::mapPermissions).collect(Collectors.toSet()))
-            .orElse(new HashSet<>());
+        .map(r -> r.getPermissions().stream().flatMap(this::mapPermissions)
+            .collect(Collectors.toSet()))
+        .orElse(new HashSet<>());
 
     tokenPermissions.addAll(identityEndpointsForEveryUser());
 
@@ -403,123 +442,137 @@ public class AuthenticationCommandHandler {
   }
 
   private Set<TokenPermission> getApplicationTokenPermissions(
-          final UserEntity user,
-          final String sourceApplicationName,
-          @SuppressWarnings("OptionalUsedAsFieldOrParameterType") final Optional<String> callEndpointSet) {
+      final UserEntity user,
+      final String sourceApplicationName,
+      @SuppressWarnings("OptionalUsedAsFieldOrParameterType") final Optional<String> callEndpointSet) {
 
     //If the call endpoint set was given, but does not correspond to a stored call endpoint set, throw an exception.
     //If it wasn't given then return all of the permissions for the application.
-    final Optional<ApplicationCallEndpointSetEntity> applicationCallEndpointSet = callEndpointSet.map(x -> {
-      final Optional<ApplicationCallEndpointSetEntity> optionalEndpointSetEntity =
-          applicationCallEndpointSets.get(sourceApplicationName, x);
-      if (optionalEndpointSetEntity.isPresent()) {
-        return optionalEndpointSetEntity.get();
-      } else {
-        throw AmitAuthenticationException.invalidToken();
-      }
-    });
+    final Optional<ApplicationCallEndpointSetEntity> applicationCallEndpointSet = callEndpointSet
+        .map(x -> {
+          final Optional<ApplicationCallEndpointSetEntity> optionalEndpointSetEntity =
+              applicationCallEndpointSets.get(sourceApplicationName, x);
+          if (optionalEndpointSetEntity.isPresent()) {
+            return optionalEndpointSetEntity.get();
+          } else {
+            throw AmitAuthenticationException.invalidToken();
+          }
+        });
 
     final RoleEntity userRole = roles.get(user.getRole())
-            .orElseThrow(AmitAuthenticationException::userPasswordCombinationNotFound);
+        .orElseThrow(AmitAuthenticationException::userPasswordCombinationNotFound);
 
-    return applicationCallEndpointSet.map(x -> this.getApplicationCallEndpointSetTokenPermissions(user.getIdentifier(), userRole, x, sourceApplicationName))
-            .orElseGet(() -> this.getApplicationUserTokenPermissions(user.getIdentifier(), userRole, sourceApplicationName));
+    return applicationCallEndpointSet.map(x -> this
+        .getApplicationCallEndpointSetTokenPermissions(user.getIdentifier(), userRole, x,
+            sourceApplicationName))
+        .orElseGet(() -> this.getApplicationUserTokenPermissions(user.getIdentifier(), userRole,
+            sourceApplicationName));
   }
 
   private Set<TokenPermission> getApplicationCallEndpointSetTokenPermissions(
-          final String userIdentifier,
-          final RoleEntity userRole,
-          final ApplicationCallEndpointSetEntity applicationCallEndpointSet,
-          final String sourceApplicationName) {
+      final String userIdentifier,
+      final RoleEntity userRole,
+      final ApplicationCallEndpointSetEntity applicationCallEndpointSet,
+      final String sourceApplicationName) {
     final List<PermissionType> permissionsForUser = userRole.getPermissions();
-    final Set<PermissionType> permissionsRequestedByApplication = applicationCallEndpointSet.getCallEndpointGroupIdentifiers().stream()
-            .map(x -> applicationPermissions.getPermissionForApplication(sourceApplicationName, x))
-            .filter(Optional::isPresent)
-            .map(Optional::get)
-            .collect(Collectors.toSet());
+    final Set<PermissionType> permissionsRequestedByApplication = applicationCallEndpointSet
+        .getCallEndpointGroupIdentifiers().stream()
+        .map(x -> applicationPermissions.getPermissionForApplication(sourceApplicationName, x))
+        .filter(Optional::isPresent)
+        .map(Optional::get)
+        .collect(Collectors.toSet());
 
     final Stream<PermissionType> applicationRequestedPermissionsTheUserHas
-            = intersectPermissionList(permissionsForUser, permissionsRequestedByApplication.stream());
+        = intersectPermissionList(permissionsForUser, permissionsRequestedByApplication.stream());
 
     final Set<PermissionType> permissionsPossible = applicationRequestedPermissionsTheUserHas
-            .filter(x ->
-                    applicationPermissionUsers.enabled(sourceApplicationName, x.getPermittableGroupIdentifier(), userIdentifier))
-            .collect(Collectors.toSet());
+        .filter(x ->
+            applicationPermissionUsers
+                .enabled(sourceApplicationName, x.getPermittableGroupIdentifier(), userIdentifier))
+        .collect(Collectors.toSet());
 
-    if (!permissionsPossible.containsAll(permissionsRequestedByApplication))
-      throw AmitAuthenticationException.applicationMissingPermissions(userIdentifier, sourceApplicationName);
+    if (!permissionsPossible.containsAll(permissionsRequestedByApplication)) {
+      throw AmitAuthenticationException
+          .applicationMissingPermissions(userIdentifier, sourceApplicationName);
+    }
 
     return permissionsPossible.stream()
-            .flatMap(this::mapPermissions)
-            .collect(Collectors.toSet());
+        .flatMap(this::mapPermissions)
+        .collect(Collectors.toSet());
   }
 
   private Set<TokenPermission> getApplicationUserTokenPermissions(
-          final String userIdentifier,
-          final RoleEntity userRole,
-          final String sourceApplicationName) {
+      final String userIdentifier,
+      final RoleEntity userRole,
+      final String sourceApplicationName) {
     final List<PermissionType> permissionsForUser = userRole.getPermissions();
-    final List<PermissionType> permissionsRequestedByApplication = applicationPermissions.getAllPermissionsForApplication(sourceApplicationName);
+    final List<PermissionType> permissionsRequestedByApplication = applicationPermissions
+        .getAllPermissionsForApplication(sourceApplicationName);
 
     final Stream<PermissionType> applicationRequestedPermissionsTheUserHas
-            = intersectPermissionList(permissionsForUser, permissionsRequestedByApplication.stream());
+        = intersectPermissionList(permissionsForUser, permissionsRequestedByApplication.stream());
 
     return applicationRequestedPermissionsTheUserHas
-            .filter(x ->
-                    applicationPermissionUsers.enabled(sourceApplicationName, x.getPermittableGroupIdentifier(), userIdentifier))
-            .flatMap(this::mapPermissions)
-            .collect(Collectors.toSet());
+        .filter(x ->
+            applicationPermissionUsers
+                .enabled(sourceApplicationName, x.getPermittableGroupIdentifier(), userIdentifier))
+        .flatMap(this::mapPermissions)
+        .collect(Collectors.toSet());
   }
 
   private Stream<PermissionType> intersectPermissionList(
-          final List<PermissionType> permissionsForUser,
-          final Stream<PermissionType> permissionsRequestedByApplication) {
-    final Map<String, Set<AllowedOperationType>> keyedUserPermissions = transformToSearchablePermissions(permissionsForUser);
+      final List<PermissionType> permissionsForUser,
+      final Stream<PermissionType> permissionsRequestedByApplication) {
+    final Map<String, Set<AllowedOperationType>> keyedUserPermissions = transformToSearchablePermissions(
+        permissionsForUser);
 
     return permissionsRequestedByApplication
-            .map(x -> new PermissionType(
-                    x.getPermittableGroupIdentifier(),
-                    intersectSets(keyedUserPermissions.get(x.getPermittableGroupIdentifier()), x.getAllowedOperations())))
-            .filter(x -> !x.getAllowedOperations().isEmpty());
+        .map(x -> new PermissionType(
+            x.getPermittableGroupIdentifier(),
+            intersectSets(keyedUserPermissions.get(x.getPermittableGroupIdentifier()),
+                x.getAllowedOperations())))
+        .filter(x -> !x.getAllowedOperations().isEmpty());
   }
 
   static <T> Set<T> intersectSets(
-          final @Nullable Set<T> allowedOperations1,
-          final @Nullable Set<T> allowedOperations2) {
-    if (allowedOperations1 == null || allowedOperations2 == null)
+      final @Nullable Set<T> allowedOperations1,
+      final @Nullable Set<T> allowedOperations2) {
+    if (allowedOperations1 == null || allowedOperations2 == null) {
       return Collections.emptySet();
+    }
 
     final Set<T> ret = new HashSet<>(allowedOperations1);
     ret.retainAll(allowedOperations2);
     return ret;
   }
 
-  static Map<String, Set<AllowedOperationType>> transformToSearchablePermissions(final List<PermissionType> permissionsForUser) {
+  static Map<String, Set<AllowedOperationType>> transformToSearchablePermissions(
+      final List<PermissionType> permissionsForUser) {
     final Collector<Set<AllowedOperationType>, Set<AllowedOperationType>, Set<AllowedOperationType>> setToSetCollector
-            = Collector.of(
-            HashSet::new,
-            Set::addAll,
-            (x, y) -> {
-              final Set<AllowedOperationType> ret = new HashSet<>();
-              ret.addAll(x);
-              ret.addAll(y);
-              return ret;
-            });
+        = Collector.of(
+        HashSet::new,
+        Set::addAll,
+        (x, y) -> {
+          final Set<AllowedOperationType> ret = new HashSet<>();
+          ret.addAll(x);
+          ret.addAll(y);
+          return ret;
+        });
 
     return permissionsForUser.stream().collect(
-            Collectors.groupingBy(PermissionType::getPermittableGroupIdentifier,
-                    Collectors.mapping(PermissionType::getAllowedOperations, setToSetCollector)));
+        Collectors.groupingBy(PermissionType::getPermittableGroupIdentifier,
+            Collectors.mapping(PermissionType::getAllowedOperations, setToSetCollector)));
   }
 
   private Set<TokenPermission> identityEndpointsForEveryUser() {
     final Set<TokenPermission> ret = identityEndpointsAllowedEvenWithExpiredPassword();
 
     ret.add(new TokenPermission(
-            applicationName + "/applications/*/permissions/*/users/{useridentifier}/enabled",
-            Sets.newHashSet(AllowedOperation.READ, AllowedOperation.CHANGE, AllowedOperation.DELETE)));
+        applicationName + "/applications/*/permissions/*/users/{useridentifier}/enabled",
+        Sets.newHashSet(AllowedOperation.READ, AllowedOperation.CHANGE, AllowedOperation.DELETE)));
     ret.add(new TokenPermission(
-            applicationName + "/users/{useridentifier}/permissions",
-            Sets.newHashSet(AllowedOperation.READ)));
+        applicationName + "/users/{useridentifier}/permissions",
+        Sets.newHashSet(AllowedOperation.READ)));
 
     return ret;
   }
@@ -528,47 +581,50 @@ public class AuthenticationCommandHandler {
     final Set<TokenPermission> ret = new HashSet<>();
 
     ret.add(new TokenPermission(
-            applicationName + "/users/{useridentifier}/password",
-            Sets.newHashSet(AllowedOperation.READ, AllowedOperation.CHANGE, AllowedOperation.DELETE)));
+        applicationName + "/users/{useridentifier}/password",
+        Sets.newHashSet(AllowedOperation.READ, AllowedOperation.CHANGE, AllowedOperation.DELETE)));
     ret.add(new TokenPermission(
-            applicationName + "/token/_current",
-            Sets.newHashSet(AllowedOperation.DELETE)));
+        applicationName + "/token/_current",
+        Sets.newHashSet(AllowedOperation.DELETE)));
 
     return ret;
   }
 
   static boolean pastExpiration(
-          @SuppressWarnings("OptionalUsedAsFieldOrParameterType") final Optional<LocalDateTime> passwordExpiration) {
+      @SuppressWarnings("OptionalUsedAsFieldOrParameterType") final Optional<LocalDateTime> passwordExpiration) {
     return passwordExpiration.map(x -> LocalDateTime.now().compareTo(x) >= 0).orElse(false);
   }
 
   static boolean pastGracePeriod(
-          @SuppressWarnings("OptionalUsedAsFieldOrParameterType") final Optional<LocalDateTime> passwordExpiration,
-          final long gracePeriod) {
-    return passwordExpiration.map(x -> (LocalDateTime.now().compareTo(x.plusDays(gracePeriod)) >= 0)).orElse(false);
+      @SuppressWarnings("OptionalUsedAsFieldOrParameterType") final Optional<LocalDateTime> passwordExpiration,
+      final long gracePeriod) {
+    return passwordExpiration
+        .map(x -> (LocalDateTime.now().compareTo(x.plusDays(gracePeriod)) >= 0)).orElse(false);
   }
 
   private Stream<TokenPermission> mapPermissions(final PermissionType permission) {
     return permittableGroups.get(permission.getPermittableGroupIdentifier())
-            .map(PermittableGroupEntity::getPermittables)
-            .map(Collection::stream)
-            .orElse(Stream.empty())
-            .filter(permittable -> isAllowed(permittable, permission))
-            .map(this::getTokenPermission);
+        .map(PermittableGroupEntity::getPermittables)
+        .map(Collection::stream)
+        .orElse(Stream.empty())
+        .filter(permittable -> isAllowed(permittable, permission))
+        .map(this::getTokenPermission);
   }
 
   private boolean isAllowed(final PermittableType permittable, final PermissionType permission) {
-    return permission.getAllowedOperations().contains(AllowedOperationType.fromHttpMethod(permittable.getMethod()));
+    return permission.getAllowedOperations()
+        .contains(AllowedOperationType.fromHttpMethod(permittable.getMethod()));
   }
 
   private TokenPermission getTokenPermission(final PermittableType permittable) {
     final HashSet<AllowedOperation> allowedOperations = new HashSet<>();
-    allowedOperations.add(RoleMapper.mapAllowedOperation(AllowedOperationType.fromHttpMethod(permittable.getMethod())));
+    allowedOperations.add(RoleMapper
+        .mapAllowedOperation(AllowedOperationType.fromHttpMethod(permittable.getMethod())));
     return new TokenPermission(permittable.getPath(), allowedOperations);
   }
 
   private TokenSerializationResult getRefreshToken(final UserEntity user,
-                                                   final PrivateSignatureEntity privateSignatureEntity) {
+      final PrivateSignatureEntity privateSignatureEntity) {
     final PrivateKey privateKey = new RsaPrivateKeyBuilder()
         .setPrivateKeyExp(privateSignatureEntity.getPrivateKeyExp())
         .setPrivateKeyMod(privateSignatureEntity.getPrivateKeyMod())

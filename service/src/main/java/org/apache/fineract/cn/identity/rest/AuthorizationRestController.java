@@ -18,6 +18,9 @@
  */
 package org.apache.fineract.cn.identity.rest;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseAuthException;
+import com.google.firebase.auth.FirebaseToken;
 import org.apache.fineract.cn.identity.api.v1.PermittableGroupIds;
 import org.apache.fineract.cn.identity.api.v1.client.IdentityManager;
 import org.apache.fineract.cn.identity.api.v1.domain.Authentication;
@@ -29,6 +32,7 @@ import org.apache.fineract.cn.command.domain.CommandCallback;
 import org.apache.fineract.cn.command.domain.CommandProcessingException;
 import org.apache.fineract.cn.command.gateway.CommandGateway;
 import org.apache.fineract.cn.identity.internal.command.AuthenticationCommandResponse;
+import org.apache.fineract.cn.identity.internal.command.FirebaseAuthenticationCommand;
 import org.apache.fineract.cn.identity.internal.command.PasswordAuthenticationCommand;
 import org.apache.fineract.cn.identity.internal.command.RefreshTokenAuthenticationCommand;
 import org.apache.fineract.cn.identity.internal.util.IdentityConstants;
@@ -86,6 +90,7 @@ public class AuthorizationRestController {
           final HttpServletResponse response,
           final HttpServletRequest request,
           @RequestParam("grant_type") final String grantType,
+          @RequestParam(value = "firebase-token-id", required = false) final String firebaseTokenId,
           @RequestParam(value = "username", required = false) final String username,
           @RequestParam(value = "password", required = false) final String password,
           @RequestHeader(value = IdentityManager.REFRESH_TOKEN, required = false) final String refreshTokenParam) throws InterruptedException {
@@ -117,6 +122,20 @@ public class AuthorizationRestController {
           return new ResponseEntity<>(ret, HttpStatus.OK);
         }
         catch (final AmitAuthenticationException e)
+        {
+          return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+
+      }
+      case "firebase": {
+        if (firebaseTokenId == null)
+          throw ServiceException.badRequest("The query parameter firebase-token-id must be set if the grant_type is firebase.");
+
+        try {
+          final Authentication ret = map(getAuthenticationCommandResponse(
+              new FirebaseAuthenticationCommand(firebaseTokenId)), response);
+          return new ResponseEntity<>(ret, HttpStatus.OK);
+        } catch (final AmitAuthenticationException e)
         {
           return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }

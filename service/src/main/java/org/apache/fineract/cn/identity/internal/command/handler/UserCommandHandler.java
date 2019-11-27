@@ -18,12 +18,16 @@
  */
 package org.apache.fineract.cn.identity.internal.command.handler;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseAuthException;
+import com.google.firebase.auth.FirebaseToken;
 import org.apache.fineract.cn.command.annotation.*;
 import org.apache.fineract.cn.command.kafka.KafkaTopicConstants;
 import org.apache.fineract.cn.identity.api.v1.events.EventConstants;
 import org.apache.fineract.cn.identity.internal.command.ChangeUserPasswordCommand;
 import org.apache.fineract.cn.identity.internal.command.ChangeUserRoleCommand;
 import org.apache.fineract.cn.identity.internal.command.CreateUserCommand;
+import org.apache.fineract.cn.identity.internal.command.CreateUserWithSocialMediaCommand;
 import org.apache.fineract.cn.identity.internal.repository.UserEntity;
 import org.apache.fineract.cn.identity.internal.repository.Users;
 import org.apache.fineract.cn.lang.ServiceException;
@@ -45,9 +49,8 @@ public class UserCommandHandler {
 
   @Autowired
   UserCommandHandler(
-          final Users usersRepository,
-          final UserEntityCreator userEntityCreator)
-  {
+      final Users usersRepository,
+      final UserEntityCreator userEntityCreator) {
     this.usersRepository = usersRepository;
     this.userEntityCreator = userEntityCreator;
   }
@@ -67,18 +70,19 @@ public class UserCommandHandler {
 
   @CommandHandler(logStart = CommandLogLevel.INFO, logFinish = CommandLogLevel.INFO)
   @EventEmitter(selectorName = EventConstants.OPERATION_HEADER,
-          selectorValue = EventConstants.OPERATION_PUT_USER_PASSWORD,
-          selectorKafkaEvent = NotificationFlag.NOTIFY,
-          selectorKafkaTopic = KafkaTopicConstants.TOPIC_IDENTITY_USER,
-          selectorKafkaTopicError = KafkaTopicConstants.TOPIC_ERROR_IDENTITY_USER)
+      selectorValue = EventConstants.OPERATION_PUT_USER_PASSWORD,
+      selectorKafkaEvent = NotificationFlag.NOTIFY,
+      selectorKafkaTopic = KafkaTopicConstants.TOPIC_IDENTITY_USER,
+      selectorKafkaTopicError = KafkaTopicConstants.TOPIC_ERROR_IDENTITY_USER)
   public String process(final ChangeUserPasswordCommand command) {
     final UserEntity user = usersRepository.get(command.getIdentifier())
         .orElseThrow(() -> ServiceException.notFound(
             "User " + command.getIdentifier() + " doesn't exist."));
 
     final UserEntity userWithNewPassword = userEntityCreator.build(
-            user.getIdentifier(), user.getRole(), command.getPassword(),
-            !SecurityContextHolder.getContext().getAuthentication().getName().equals(command.getIdentifier()));
+        user.getIdentifier(), user.getRole(), command.getPassword(),
+        !SecurityContextHolder.getContext().getAuthentication().getName()
+            .equals(command.getIdentifier()));
     usersRepository.add(userWithNewPassword);
 
     return user.getIdentifier();
@@ -86,15 +90,44 @@ public class UserCommandHandler {
 
   @CommandHandler(logStart = CommandLogLevel.INFO, logFinish = CommandLogLevel.INFO)
   @EventEmitter(selectorName = EventConstants.OPERATION_HEADER,
-          selectorValue = EventConstants.OPERATION_POST_USER,
-          selectorKafkaEvent = NotificationFlag.NOTIFY,
-          selectorKafkaTopic = KafkaTopicConstants.TOPIC_IDENTITY_USER,
-          selectorKafkaTopicError = KafkaTopicConstants.TOPIC_ERROR_IDENTITY_USER)
+      selectorValue = EventConstants.OPERATION_POST_USER,
+      selectorKafkaEvent = NotificationFlag.NOTIFY,
+      selectorKafkaTopic = KafkaTopicConstants.TOPIC_IDENTITY_USER,
+      selectorKafkaTopicError = KafkaTopicConstants.TOPIC_ERROR_IDENTITY_USER)
   public String process(final CreateUserCommand command) {
     Assert.hasText(command.getPassword());
 
     final UserEntity userEntity = userEntityCreator.build(
         command.getIdentifier(), command.getRole(), command.getPassword(), true);
+
+    usersRepository.add(userEntity);
+
+    return command.getIdentifier();
+  }
+
+  @CommandHandler(logStart = CommandLogLevel.INFO, logFinish = CommandLogLevel.INFO)
+  @EventEmitter(selectorName = EventConstants.OPERATION_HEADER,
+      selectorValue = EventConstants.OPERATION_POST_USER,
+      selectorKafkaEvent = NotificationFlag.NOTIFY,
+      selectorKafkaTopic = KafkaTopicConstants.TOPIC_IDENTITY_USER,
+      selectorKafkaTopicError = KafkaTopicConstants.TOPIC_ERROR_IDENTITY_USER)
+  public String process(final CreateUserWithSocialMediaCommand command) {
+    Assert.hasText(command.getFirebaseToken());
+
+    FirebaseToken token;
+    try {
+      token = FirebaseAuth.getInstance().verifyIdToken(command.getFirebaseToken());
+    } catch (FirebaseAuthException e) {
+      throw ServiceException.badRequest("Firebase token is incorrect.", e);
+    } catch (final IllegalArgumentException e) {
+      throw ServiceException.badRequest("There was an error getting information from firebase token.", e);
+    }
+
+    if (!token.getEmail().equals(command.getIdentifier()))
+      throw ServiceException.badRequest("Firebase token email is different from identifier.");
+
+    final UserEntity userEntity = userEntityCreator.build(
+        command.getIdentifier(), command.getRole(), null, true);
 
     usersRepository.add(userEntity);
 

@@ -50,6 +50,7 @@ bootRepackage {
 
 dependencies {
     compile(
+            [group: 'com.google.firebase', name: 'firebase-admin', version: '6.8.1'],
             [group: 'org.springframework.cloud', name: 'spring-cloud-starter-config'],
             [group: 'org.springframework.cloud', name: 'spring-cloud-starter-eureka'],
             [group: 'org.springframework.boot', name: 'spring-boot-starter-jetty'],

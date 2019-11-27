@@ -52,6 +52,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter
 @EnableCrypto
 @EnableAnubis(provideSignatureStorage = false)
 @ComponentScan({
+    "org.apache.fineract.cn.identity.config",
     "org.apache.fineract.cn.identity.rest",
     "org.apache.fineract.cn.identity.internal.service",
     "org.apache.fineract.cn.identity.internal.repository",
