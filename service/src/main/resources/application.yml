@@ -31,12 +31,14 @@ eureka:
     enabled: true
   instance:
     leaseRenewalIntervalInSeconds: 1
+    homePageUrl: "http://${eureka.hostname}:2021/identity/v1/"
   client:
     initialInstanceInfoReplicationIntervalSeconds: 0
     instanceInfoReplicationIntervalSeconds: 1
     fetchRegistry: true
     serviceUrl:
       defaultZone: http://localhost:8761/eureka/
+      registerWithEureka: false
 
 activemq:
   secured: false
@@ -63,13 +65,19 @@ cassandra:
     write: ONE
     delete: ONE
 
-mariadb:
-  driverClass: org.mariadb.jdbc.Driver
-  database: seshat
+connpool:
   host: localhost
   port: 3306
-  user: seshat
-  password: password
+  user: root
+  password: mysql
+  metainstance: system_console
+  idleMaxAgeInMinutes: 240
+  idleConnectionTestPeriodInMinutes: 60
+  maxConnectionsPerPartition: 10
+  minConnectionsPerPartition: 1
+  partitionCount: 2
+  acquireIncrement: 5
+  statementsCacheSize: 100
 
 executor:
   corepoolsize: 32
