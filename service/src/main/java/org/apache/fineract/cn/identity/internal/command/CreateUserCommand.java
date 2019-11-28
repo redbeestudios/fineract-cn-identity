@@ -27,6 +27,7 @@ import org.apache.fineract.cn.identity.api.v1.domain.UserWithPassword;
 @SuppressWarnings("unused")
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
 public class CreateUserCommand {
+  private String id;
   private String identifier;
   private String role;
 
@@ -40,6 +41,7 @@ public class CreateUserCommand {
     this.identifier = instance.getIdentifier();
     this.role = instance.getRole();
     this.password = instance.getPassword();
+    this.id = instance.getId();
   }
 
   public String getIdentifier() {
@@ -66,11 +68,20 @@ public class CreateUserCommand {
     this.password = password;
   }
 
+  public String getId() {
+    return id;
+  }
+
+  public void setId(String id) {
+    this.id = id;
+  }
+
   @Override
   public String toString() {
     return "CreateUserCommand{" +
             "identifier='" + identifier + '\'' +
             ", role='" + role + '\'' +
-            '}';
+            ", id='" + role + '\'' +
+        '}';
   }
 }

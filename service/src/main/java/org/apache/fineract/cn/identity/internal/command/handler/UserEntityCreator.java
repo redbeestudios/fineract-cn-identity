@@ -56,6 +56,7 @@ public class UserEntityCreator {
 
 
   UserEntity build(
+      final String id,
       final String identifier,
       final String role,
       final String password,

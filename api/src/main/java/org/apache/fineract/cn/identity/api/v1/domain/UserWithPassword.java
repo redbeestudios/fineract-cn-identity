@@ -31,6 +31,9 @@ import java.util.Objects;
 @SuppressWarnings({"unused", "WeakerAccess"})
 @ScriptAssert(lang = "javascript", script = "_this.identifier !== \"guest\" && _this.identifier !== \"seshat\" && _this.identifier !== \"system\" && _this.identifier !== \"wepemnefret\"" )
 public class UserWithPassword {
+  @NotBlank
+  private String id;
+
   @ValidIdentifier
   private String identifier;
 
@@ -85,6 +88,14 @@ public class UserWithPassword {
     this.firebaseToken = firebaseToken;
   }
 
+  public String getId() {
+    return id;
+  }
+
+  public void setId(String id) {
+    this.id = id;
+  }
+
   @Override public boolean equals(Object o) {
     if (this == o)
       return true;
@@ -94,7 +105,8 @@ public class UserWithPassword {
     return Objects.equals(identifier, that.identifier) &&
         Objects.equals(role, that.role) &&
         Objects.equals(password, that.password) &&
-        Objects.equals(firebaseToken, that.firebaseToken);
+        Objects.equals(firebaseToken, that.firebaseToken) &&
+        Objects.equals(id, that.id);
   }
 
   @Override public int hashCode() {
@@ -107,6 +119,7 @@ public class UserWithPassword {
         ", role='" + role + '\'' +
         ", password='" + password + '\'' +
         ", firebaseToken=" + firebaseToken +'\'' +
+        ", id=" + id +'\'' +
         '}';
   }
 }

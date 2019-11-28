@@ -30,8 +30,11 @@ import org.apache.fineract.cn.identity.internal.command.CreateUserCommand;
 import org.apache.fineract.cn.identity.internal.command.CreateUserWithSocialMediaCommand;
 import org.apache.fineract.cn.identity.internal.repository.UserEntity;
 import org.apache.fineract.cn.identity.internal.repository.Users;
+import org.apache.fineract.cn.identity.internal.util.IdentityConstants;
 import org.apache.fineract.cn.lang.ServiceException;
+import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
@@ -46,13 +49,16 @@ public class UserCommandHandler {
 
   private final Users usersRepository;
   private final UserEntityCreator userEntityCreator;
+  private final Logger logger;
 
   @Autowired
   UserCommandHandler(
       final Users usersRepository,
-      final UserEntityCreator userEntityCreator) {
+      final UserEntityCreator userEntityCreator,
+      @Qualifier(IdentityConstants.LOGGER_NAME) final Logger logger) {
     this.usersRepository = usersRepository;
     this.userEntityCreator = userEntityCreator;
+    this.logger = logger;
   }
 
   @CommandHandler(logStart = CommandLogLevel.INFO, logFinish = CommandLogLevel.INFO)
@@ -80,7 +86,10 @@ public class UserCommandHandler {
             "User " + command.getIdentifier() + " doesn't exist."));
 
     final UserEntity userWithNewPassword = userEntityCreator.build(
-        user.getIdentifier(), user.getRole(), command.getPassword(),
+        user.getId(),
+        user.getIdentifier(),
+        user.getRole(),
+        command.getPassword(),
         !SecurityContextHolder.getContext().getAuthentication().getName()
             .equals(command.getIdentifier()));
     usersRepository.add(userWithNewPassword);
@@ -98,7 +107,11 @@ public class UserCommandHandler {
     Assert.hasText(command.getPassword());
 
     final UserEntity userEntity = userEntityCreator.build(
-        command.getIdentifier(), command.getRole(), command.getPassword(), true);
+        command.getId(),
+        command.getIdentifier(),
+        command.getRole(),
+        command.getPassword(),
+        true);
 
     usersRepository.add(userEntity);
 
@@ -118,8 +131,10 @@ public class UserCommandHandler {
     try {
       token = FirebaseAuth.getInstance().verifyIdToken(command.getFirebaseToken());
     } catch (FirebaseAuthException e) {
+      logger.error("Incorrect firebase token", e);
       throw ServiceException.badRequest("Firebase token is incorrect.", e);
     } catch (final IllegalArgumentException e) {
+      logger.error("Error getting firebase token", e);
       throw ServiceException.badRequest("There was an error getting information from firebase token.", e);
     }
 
@@ -127,7 +142,11 @@ public class UserCommandHandler {
       throw ServiceException.badRequest("Firebase token email is different from identifier.");
 
     final UserEntity userEntity = userEntityCreator.build(
-        command.getIdentifier(), command.getRole(), null, true);
+        command.getId(),
+        command.getIdentifier(),
+        command.getRole(),
+        null,
+        true);
 
     usersRepository.add(userEntity);
 

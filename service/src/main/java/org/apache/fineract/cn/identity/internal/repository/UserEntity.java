@@ -33,6 +33,8 @@ public class UserEntity {
   @PartitionKey
   @Column(name = Users.IDENTIFIER_COLUMN)
   private String identifier;
+  @Column(name = Users.ID_COLUMN)
+  private String id;
   @Column(name = Users.ROLE_COLUMN)
   private String role;
   @Column(name = Users.PASSWORD_COLUMN)
@@ -92,5 +94,13 @@ public class UserEntity {
 
   public void setPasswordExpiresOn(LocalDate passwordExpiresOn) {
     this.passwordExpiresOn = passwordExpiresOn;
+  }
+
+  public String getId() {
+    return id;
+  }
+
+  public void setId(String id) {
+    this.id = id;
   }
 }
