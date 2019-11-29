@@ -77,6 +77,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.stereotype.Component;
+import org.springframework.util.Assert;
 import org.springframework.util.Base64Utils;
 
 import javax.annotation.Nullable;
