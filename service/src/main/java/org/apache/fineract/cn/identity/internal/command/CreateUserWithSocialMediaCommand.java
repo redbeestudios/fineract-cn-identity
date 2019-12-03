@@ -27,7 +27,7 @@ import org.apache.fineract.cn.identity.api.v1.domain.UserWithPassword;
 @SuppressWarnings("unused")
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
 public class CreateUserWithSocialMediaCommand {
-
+  private String id;
   private String identifier;
   private String role;
 
@@ -64,11 +64,20 @@ public class CreateUserWithSocialMediaCommand {
     this.firebaseToken = firebaseToken;
   }
 
+  public String getId() {
+    return id;
+  }
+
+  public void setId(String id) {
+    this.id = id;
+  }
+
   @Override
   public String toString() {
     return "CreateUserCommand{" +
         "identifier='" + identifier + '\'' +
         ", role='" + role + '\'' +
+        ", id='" + id + '\'' +
         '}';
   }
 }

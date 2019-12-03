@@ -45,6 +45,7 @@ public class Users {
   static final String IDENTIFIER_COLUMN = "identifier";
   static final String ROLE_COLUMN = "roleIdentifier";
   static final String PASSWORD_COLUMN = "passwordWord";
+  static final String ID_COLUMN = "id";
   static final String PASSWORD_EXPIRES_ON_COLUMN = "password_expires_on";
   static final String SALT_COLUMN = "salt";
   static final String ITERATION_COUNT_COLUMN = "iteration_count";

@@ -56,6 +56,7 @@ public class UserEntityCreator {
 
 
   UserEntity build(
+      final String id,
       final String identifier,
       final String role,
       final String password,
@@ -64,12 +65,13 @@ public class UserEntityCreator {
     final Optional<PrivateTenantInfoEntity> tenantInfo = tenants.getPrivateTenantInfo();
 
     return tenantInfo
-        .map(x -> build(identifier, role, password, passwordMustChange,
+        .map(x -> build(id, identifier, role, password, passwordMustChange,
             x.getFixedSalt().array(), x.getPasswordExpiresInDays()))
         .orElseThrow(() -> ServiceException.internalError("The tenant is not initialized."));
   }
 
   public UserEntity build(
+      final String id,
       final String identifier,
       final String role,
       final String password,
@@ -80,6 +82,7 @@ public class UserEntityCreator {
 
     userEntity.setIdentifier(identifier);
     userEntity.setRole(role);
+    userEntity.setId(id);
 
     final byte[] variableSalt = this.saltGenerator.createRandomSalt();
     final byte[] fullSalt = EncodingUtils.concatenate(variableSalt, fixedSalt);

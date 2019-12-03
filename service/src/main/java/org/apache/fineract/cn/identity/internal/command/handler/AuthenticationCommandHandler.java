@@ -77,6 +77,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.stereotype.Component;
+import org.springframework.util.Assert;
 import org.springframework.util.Base64Utils;
 
 import javax.annotation.Nullable;
@@ -169,9 +170,11 @@ public class AuthenticationCommandHandler {
     try {
       token = FirebaseAuth.getInstance().verifyIdToken(command.getFiresbaseToken());
     } catch (FirebaseAuthException e) {
+      logger.error("Incorrect firebase token {}", command.getFiresbaseToken(),  e);
       throw ServiceException.badRequest("Firebase token is incorrect.", e);
     } catch (final IllegalArgumentException e) {
-      throw ServiceException.badRequest("There was an error getting information from firebase token.", e);
+      logger.error("Error getting firebase token", e);
+      throw ServiceException.badRequest("There was an error getting information from firebase token {}", command.getFiresbaseToken(), e);
     }
     final PrivateTenantInfoEntity privateTenantInfo = checkedGetPrivateTenantInfo();
     final PrivateSignatureEntity privateSignature = checkedGetPrivateSignature();
@@ -354,6 +357,7 @@ public class AuthenticationCommandHandler {
         minifiedTokenPermissions.toString());
 
     final TokenSerializationResult accessToken = getAuthenticationResponse(
+        user.getId(),
         user.getIdentifier(),
         minifiedTokenPermissions,
         privateSignature,
@@ -405,6 +409,7 @@ public class AuthenticationCommandHandler {
   }
 
   private TokenSerializationResult getAuthenticationResponse(
+      final String userId,
       final String userIdentifier,
       final Set<TokenPermission> tokenPermissions,
       final PrivateSignatureEntity privateSignatureEntity,
@@ -417,6 +422,7 @@ public class AuthenticationCommandHandler {
 
     final TenantAccessTokenSerializer.Specification x =
         new TenantAccessTokenSerializer.Specification()
+            .setUserId(userId)
             .setKeyTimestamp(privateSignatureEntity.getKeyTimestamp())
             .setPrivateKey(privateKey)
             .setTokenContent(new TokenContent(new ArrayList<>(tokenPermissions)))
