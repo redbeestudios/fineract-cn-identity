@@ -111,7 +111,7 @@ public class UserCommandHandler {
         command.getIdentifier(),
         command.getRole(),
         command.getPassword(),
-        true);
+        false);
 
     usersRepository.add(userEntity);
 
@@ -146,7 +146,7 @@ public class UserCommandHandler {
         command.getIdentifier(),
         command.getRole(),
         null,
-        true);
+        false);
 
     usersRepository.add(userEntity);
 
