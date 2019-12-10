@@ -35,6 +35,7 @@ public class CreateUserWithSocialMediaCommand {
 
   public CreateUserWithSocialMediaCommand(
       UserWithPassword instance) {
+    this.id = instance.getId();
     this.identifier = instance.getIdentifier();
     this.role = instance.getRole();
     this.firebaseToken = instance.getFirebaseToken();
