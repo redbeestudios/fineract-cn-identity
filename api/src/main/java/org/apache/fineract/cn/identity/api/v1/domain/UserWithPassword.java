@@ -34,7 +34,7 @@ public class UserWithPassword {
   @NotBlank
   private String id;
 
-  @ValidIdentifier
+  @ValidIdentifier(maxLength = 350)
   private String identifier;
 
   @ValidIdentifier
