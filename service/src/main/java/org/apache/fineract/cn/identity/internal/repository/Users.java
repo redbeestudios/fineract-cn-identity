@@ -72,7 +72,8 @@ public class Users {
         .addColumn(PASSWORD_COLUMN, DataType.blob())
         .addColumn(SALT_COLUMN, DataType.blob())
         .addColumn(ITERATION_COUNT_COLUMN, DataType.cint())
-        .addColumn(PASSWORD_EXPIRES_ON_COLUMN, DataType.date());
+        .addColumn(PASSWORD_EXPIRES_ON_COLUMN, DataType.date())
+        .addColumn(ID_COLUMN, DataType.text());
 
     cassandraSessionProvider.getTenantSession().execute(create);
   }
