@@ -10,6 +10,10 @@ spec:
       protocol: TCP
       port: 2021
       targetPort: httpport
+    - name: httpdebug
+      protocol: TCP
+      port: 5005
+      targetPort: debugport
 
 ---
 
@@ -45,6 +49,8 @@ spec:
           ports:
             - name: httpport
               containerPort: 2021
+            - name: debugport
+              containerPort: 5005
           resources:
             requests:
               memory: 1Gi

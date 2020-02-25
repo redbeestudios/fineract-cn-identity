@@ -17,5 +17,5 @@
 # specific language governing permissions and limitations
 # under the License.
 
-#java -server -Xdebug -Xrunjdwp:transport=dt_socket,address=5005,server=y,suspend=y -XX:+UnlockExperimentalVMOptions -XX:+UseCGroupMemoryLimitForHeap -XX:MaxRAMFraction=1 $JAVA_OPTS -jar $1
-java -server -XX:+UnlockExperimentalVMOptions -XX:+UseCGroupMemoryLimitForHeap -XX:MaxRAMFraction=1 $JAVA_OPTS -jar $1
+java -server -Xdebug -Xrunjdwp:transport=dt_socket,address=5005,server=y,suspend=n -XX:+UnlockExperimentalVMOptions -XX:+UseCGroupMemoryLimitForHeap -XX:MaxRAMFraction=1 $JAVA_OPTS -jar $1
+#java -server -XX:+UnlockExperimentalVMOptions -XX:+UseCGroupMemoryLimitForHeap -XX:MaxRAMFraction=1 $JAVA_OPTS -jar $1
