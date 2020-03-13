@@ -18,16 +18,6 @@
  */
 package org.apache.fineract.cn.identity.api.v1.client;
 
-import org.apache.fineract.cn.api.annotation.ThrowsExceptions;
-import org.apache.fineract.cn.identity.api.v1.domain.Authentication;
-import org.apache.fineract.cn.identity.api.v1.domain.CallEndpointSet;
-import org.apache.fineract.cn.identity.api.v1.domain.Password;
-import org.apache.fineract.cn.identity.api.v1.domain.Permission;
-import org.apache.fineract.cn.identity.api.v1.domain.PermittableGroup;
-import org.apache.fineract.cn.identity.api.v1.domain.Role;
-import org.apache.fineract.cn.identity.api.v1.domain.RoleIdentifier;
-import org.apache.fineract.cn.identity.api.v1.domain.User;
-import org.apache.fineract.cn.identity.api.v1.domain.UserWithPassword;
 import java.util.List;
 import java.util.Set;
 import org.apache.fineract.cn.anubis.api.v1.client.Anubis;
@@ -35,7 +25,18 @@ import org.apache.fineract.cn.anubis.api.v1.domain.ApplicationSignatureSet;
 import org.apache.fineract.cn.anubis.api.v1.domain.Signature;
 import org.apache.fineract.cn.anubis.api.v1.validation.ValidKeyTimestamp;
 import org.apache.fineract.cn.api.annotation.ThrowsException;
+import org.apache.fineract.cn.api.annotation.ThrowsExceptions;
 import org.apache.fineract.cn.api.util.CustomFeignClientsConfiguration;
+import org.apache.fineract.cn.identity.api.v1.domain.Authentication;
+import org.apache.fineract.cn.identity.api.v1.domain.CallEndpointSet;
+import org.apache.fineract.cn.identity.api.v1.domain.Password;
+import org.apache.fineract.cn.identity.api.v1.domain.Permission;
+import org.apache.fineract.cn.identity.api.v1.domain.PermittableGroup;
+import org.apache.fineract.cn.identity.api.v1.domain.PushNotificationRequest;
+import org.apache.fineract.cn.identity.api.v1.domain.Role;
+import org.apache.fineract.cn.identity.api.v1.domain.RoleIdentifier;
+import org.apache.fineract.cn.identity.api.v1.domain.User;
+import org.apache.fineract.cn.identity.api.v1.domain.UserWithPassword;
 import org.springframework.cloud.netflix.feign.FeignClient;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -75,6 +76,16 @@ public interface IdentityManager extends Anubis {
           consumes = {MediaType.APPLICATION_JSON_VALUE},
           produces = {MediaType.ALL_VALUE})
   void logout();
+
+  @RequestMapping(
+      value = "/notifications",
+      method = RequestMethod.POST,
+      consumes = {MediaType.APPLICATION_JSON_VALUE},
+      produces = {MediaType.APPLICATION_JSON_VALUE}
+  )
+  void sendPushNotificationByAccountId(
+      @RequestBody final PushNotificationRequest request
+  );
 
   @RequestMapping(value = "/permittablegroups", method = RequestMethod.POST,
           consumes = {MediaType.APPLICATION_JSON_VALUE},

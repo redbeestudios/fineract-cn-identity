@@ -25,13 +25,15 @@ package org.apache.fineract.cn.identity.internal.command;
 public class FirebaseAuthenticationCommand {
 
   private String firesbaseToken;
+  private String pushNotificationFirebaseToken;
 
   FirebaseAuthenticationCommand() {
   }
 
   public FirebaseAuthenticationCommand(
-      final String firesbaseToken) {
+      final String firesbaseToken, final String pushNotificationFirebaseToken) {
     this.firesbaseToken = firesbaseToken;
+    this.pushNotificationFirebaseToken = pushNotificationFirebaseToken;
   }
 
   public String getFiresbaseToken() {
@@ -42,10 +44,19 @@ public class FirebaseAuthenticationCommand {
     this.firesbaseToken = firesbaseToken;
   }
 
+  public String getPushNotificationFirebaseToken() {
+    return pushNotificationFirebaseToken;
+  }
+
+  public void setPushNotificationFirebaseToken(String pushNotificationFirebaseToken) {
+    this.pushNotificationFirebaseToken = pushNotificationFirebaseToken;
+  }
+
   @Override
   public String toString() {
     return "FirebaseAuthenticationCommand{" +
         "firesbaseToken='" + firesbaseToken + '\'' +
+        "pushNotificationFirebaseToken='" + pushNotificationFirebaseToken + '\'' +
         '}';
   }
 }

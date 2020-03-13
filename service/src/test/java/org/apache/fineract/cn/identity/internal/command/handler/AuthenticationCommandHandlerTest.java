@@ -38,6 +38,7 @@ import org.apache.fineract.cn.identity.internal.repository.PermissionType;
 import org.apache.fineract.cn.identity.internal.repository.PermittableGroups;
 import org.apache.fineract.cn.identity.internal.repository.PrivateSignatureEntity;
 import org.apache.fineract.cn.identity.internal.repository.PrivateTenantInfoEntity;
+import org.apache.fineract.cn.identity.internal.repository.PushNotifications;
 import org.apache.fineract.cn.identity.internal.repository.RoleEntity;
 import org.apache.fineract.cn.identity.internal.repository.Roles;
 import org.apache.fineract.cn.identity.internal.repository.Signatures;
@@ -88,6 +89,7 @@ public class AuthenticationCommandHandlerTest {
     RsaKeyPairFactory.KeyPairHolder keyPair = RsaKeyPairFactory.createKeyPair();
 
     final Users users = Mockito.mock(Users.class);
+    final PushNotifications pushNotifications = Mockito.mock(PushNotifications.class);
     final Roles roles = Mockito.mock(Roles.class);
     final PermittableGroups permittableGroups = Mockito.mock(PermittableGroups.class);
     final Signatures signatures = Mockito.mock(Signatures.class);
@@ -108,7 +110,7 @@ public class AuthenticationCommandHandlerTest {
     final ApplicationCallEndpointSets applicationCallEndpointSets = Mockito.mock(ApplicationCallEndpointSets.class);
 
     commandHandler = new AuthenticationCommandHandler(
-        users, roles, permittableGroups, signatures, tenants,
+        users, pushNotifications, roles, permittableGroups, signatures, tenants,
         hashGenerator,
         tenantAccessTokenSerializer, tenantRefreshTokenSerializer, tenantRsaKeyProvider,
             applicationSignatures, applicationPermissions, applicationPermissionUsers, applicationCallEndpointSets,

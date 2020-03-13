@@ -21,6 +21,8 @@ package org.apache.fineract.cn.identity.internal.command.handler;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.auth.FirebaseToken;
+import java.util.Optional;
+import java.util.UUID;
 import org.apache.fineract.cn.command.annotation.*;
 import org.apache.fineract.cn.command.kafka.KafkaTopicConstants;
 import org.apache.fineract.cn.identity.api.v1.events.EventConstants;
@@ -28,6 +30,8 @@ import org.apache.fineract.cn.identity.internal.command.ChangeUserPasswordComman
 import org.apache.fineract.cn.identity.internal.command.ChangeUserRoleCommand;
 import org.apache.fineract.cn.identity.internal.command.CreateUserCommand;
 import org.apache.fineract.cn.identity.internal.command.CreateUserWithSocialMediaCommand;
+import org.apache.fineract.cn.identity.internal.repository.PushNotificationEntity;
+import org.apache.fineract.cn.identity.internal.repository.PushNotifications;
 import org.apache.fineract.cn.identity.internal.repository.UserEntity;
 import org.apache.fineract.cn.identity.internal.repository.Users;
 import org.apache.fineract.cn.identity.internal.util.IdentityConstants;

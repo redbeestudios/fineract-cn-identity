@@ -23,17 +23,29 @@ package org.apache.fineract.cn.identity.internal.command;
  */
 @SuppressWarnings("unused")
 public class PasswordAuthenticationCommand {
+
   private String useridentifier;
   private transient String password;
+  private String pushNotificationFirebaseToken;
 
-  PasswordAuthenticationCommand() {}
+  PasswordAuthenticationCommand() {
+  }
 
   public PasswordAuthenticationCommand(
       final String useridentifier,
       final String password) {
+    this(useridentifier, password, null);
+  }
+
+  public PasswordAuthenticationCommand(
+      final String useridentifier,
+      final String password,
+      final String pushNotificationFirebaseToken) {
     this.useridentifier = useridentifier;
     this.password = password;
+    this.pushNotificationFirebaseToken = pushNotificationFirebaseToken;
   }
+
 
   public String getUseridentifier() {
     return useridentifier;
@@ -51,10 +63,19 @@ public class PasswordAuthenticationCommand {
     this.password = password;
   }
 
+  public String getPushNotificationFirebaseToken() {
+    return pushNotificationFirebaseToken;
+  }
+
+  public void setPushNotificationFirebaseToken(String pushNotificationFirebaseToken) {
+    this.pushNotificationFirebaseToken = pushNotificationFirebaseToken;
+  }
+
   @Override
   public String toString() {
     return "PasswordAuthenticationCommand{" +
-            "useridentifier='" + useridentifier + '\'' +
-            '}';
+        "useridentifier='" + useridentifier + '\'' +
+        "pushNotificationFirebaseToken='" + pushNotificationFirebaseToken + '\'' +
+        '}';
   }
 }

@@ -56,6 +56,8 @@ import org.apache.fineract.cn.identity.internal.repository.PermittableGroups;
 import org.apache.fineract.cn.identity.internal.repository.PermittableType;
 import org.apache.fineract.cn.identity.internal.repository.PrivateSignatureEntity;
 import org.apache.fineract.cn.identity.internal.repository.PrivateTenantInfoEntity;
+import org.apache.fineract.cn.identity.internal.repository.PushNotificationEntity;
+import org.apache.fineract.cn.identity.internal.repository.PushNotifications;
 import org.apache.fineract.cn.identity.internal.repository.RoleEntity;
 import org.apache.fineract.cn.identity.internal.repository.Roles;
 import org.apache.fineract.cn.identity.internal.repository.Signatures;
@@ -77,7 +79,6 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.stereotype.Component;
-import org.springframework.util.Assert;
 import org.springframework.util.Base64Utils;
 
 import javax.annotation.Nullable;
@@ -101,6 +102,7 @@ import java.util.stream.Stream;
 public class AuthenticationCommandHandler {
 
   private final Users users;
+  private final PushNotifications pushNotificationsRepository;
   private final Roles roles;
   private final PermittableGroups permittableGroups;
   private final Signatures signatures;
@@ -128,6 +130,7 @@ public class AuthenticationCommandHandler {
 
   @Autowired
   public AuthenticationCommandHandler(final Users users,
+      PushNotifications pushNotificationsRepository,
       final Roles roles,
       final PermittableGroups permittableGroups,
       final Signatures signatures,
@@ -145,6 +148,7 @@ public class AuthenticationCommandHandler {
       @Qualifier(IdentityConstants.JSON_SERIALIZER_NAME) final Gson gson,
       @Qualifier(IdentityConstants.LOGGER_NAME) final Logger logger) {
     this.users = users;
+    this.pushNotificationsRepository = pushNotificationsRepository;
     this.roles = roles;
     this.permittableGroups = permittableGroups;
     this.signatures = signatures;
@@ -167,14 +171,17 @@ public class AuthenticationCommandHandler {
   public AuthenticationCommandResponse process(final FirebaseAuthenticationCommand command)
       throws AmitAuthenticationException {
     FirebaseToken token;
+    logger.info("FirebaseAuthenticationCommand {}", command);
     try {
       token = FirebaseAuth.getInstance().verifyIdToken(command.getFiresbaseToken());
     } catch (FirebaseAuthException e) {
-      logger.error("Incorrect firebase token {}", command.getFiresbaseToken(),  e);
+      logger.error("Incorrect firebase token {}", command.getFiresbaseToken(), e);
       throw ServiceException.badRequest("Firebase token is incorrect.", e);
     } catch (final IllegalArgumentException e) {
       logger.error("Error getting firebase token", e);
-      throw ServiceException.badRequest("There was an error getting information from firebase token {}", command.getFiresbaseToken(), e);
+      throw ServiceException
+          .badRequest("There was an error getting information from firebase token {}",
+              command.getFiresbaseToken(), e);
     }
     final PrivateTenantInfoEntity privateTenantInfo = checkedGetPrivateTenantInfo();
     final PrivateSignatureEntity privateSignature = checkedGetPrivateSignature();
@@ -188,6 +195,7 @@ public class AuthenticationCommandHandler {
         user,
         refreshToken.getToken(),
         refreshToken.getExpiration());
+    manageFirebaseToken(command.getPushNotificationFirebaseToken(), user.getId());
 
     fireAuthenticationEvent(user.getIdentifier());
 
@@ -198,6 +206,7 @@ public class AuthenticationCommandHandler {
   @CommandHandler(logStart = CommandLogLevel.DEBUG, logFinish = CommandLogLevel.DEBUG)
   public AuthenticationCommandResponse process(final PasswordAuthenticationCommand command)
       throws AmitAuthenticationException {
+    logger.info("PasswordAuthenticationCommand {}", command);
     final byte[] base64decodedPassword;
     try {
       base64decodedPassword = Base64Utils.decodeFromString(command.getPassword());
@@ -232,6 +241,7 @@ public class AuthenticationCommandHandler {
         refreshToken.getToken(),
         refreshToken.getExpiration());
 
+    manageFirebaseToken(command.getPushNotificationFirebaseToken(), user.getId());
     fireAuthenticationEvent(user.getIdentifier());
 
     return ret;
@@ -645,5 +655,20 @@ public class AuthenticationCommandHandler {
             .setSourceApplication(applicationName.toString());
 
     return tenantRefreshTokenSerializer.build(x);
+  }
+
+  private void manageFirebaseToken(String pushNotificationFirebaseToken, String accountId) {
+    Optional.ofNullable(pushNotificationFirebaseToken)
+        .ifPresent((token) -> {
+          Optional<PushNotificationEntity> exPushNotification = pushNotificationsRepository
+              .getByFirebaseToken(token);
+
+          exPushNotification.ifPresent(pushNotificationsRepository::delete);
+
+          final PushNotificationEntity pushNotification = new PushNotificationEntity();
+          pushNotification.setAccountId(UUID.fromString(accountId));
+          pushNotification.setFirebaseToken(token);
+          pushNotificationsRepository.add(pushNotification);
+        });
   }
 }

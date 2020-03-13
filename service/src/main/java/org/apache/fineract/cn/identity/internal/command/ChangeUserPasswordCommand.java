@@ -19,6 +19,7 @@
 package org.apache.fineract.cn.identity.internal.command;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import java.util.UUID;
 
 /**
  * @author Myrle Krantz
@@ -58,7 +59,7 @@ public class ChangeUserPasswordCommand {
   @Override
   public String toString() {
     return "ChangeUserPasswordCommand{" +
-            "identifier='" + identifier + '\'' +
-            '}';
+        "identifier='" + identifier + '\'' +
+        '}';
   }
 }
